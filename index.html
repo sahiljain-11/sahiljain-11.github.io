@@ -17,7 +17,8 @@
    ============================================================ */
 @font-face{
   font-family:'Inkburrow';
-  src:url('inkburrow.woff2') format('woff2'), url('inkburrow.ttf') format('truetype');
+  src:url('inkburrow.woff2') format('woff2'), url('Inkburrow.woff2') format('woff2'),
+      url('inkburrow.ttf') format('truetype'), url('Inkburrow.ttf') format('truetype');
   font-display:swap;
 }
 :root{
@@ -75,6 +76,19 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .btn:disabled{opacity:.35;cursor:not-allowed}
 #map{flex:1}
 .hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--ink);color:var(--gold-dim);padding:8px 18px;border-radius:2px;font-size:12px;letter-spacing:.06em;display:none;box-shadow:0 2px 14px rgba(28,23,18,.25);font-family:'Questrial'}
+#locPicker{position:absolute;top:0;left:0;right:0;z-index:1300;display:none;padding:10px;pointer-events:none}
+#locPicker.open{display:block}
+#locSearch{width:100%;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:11px 13px;font-size:14px;font-family:'Questrial';box-shadow:0 3px 14px rgba(28,23,18,.28);pointer-events:auto}
+#locSuggest{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--cream-4);border-top:none;z-index:1310;max-height:240px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(28,23,18,.22);pointer-events:auto}
+#locSuggest.show{display:block}
+#locSuggest .lsug{padding:10px 13px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--cream-2);color:var(--ink)}
+#locSuggest .lsug:last-child{border-bottom:none}
+#locSuggest .lsug:hover{background:var(--cream-2)}
+#locBar{position:fixed;left:10px;right:10px;bottom:16px;background:var(--cream);border:1px solid var(--gold-dim);border-radius:2px;padding:12px 14px;box-shadow:0 -4px 20px rgba(28,23,18,.3);pointer-events:auto;max-width:500px;margin:0 auto}
+#locHelp{display:block;font-size:11.5px;color:var(--muted);margin-bottom:9px;line-height:1.4}
+.locBtns{display:flex;gap:8px}
+.locBtns button{flex:1}
+.pin-dot{width:22px;height:22px;border-radius:50%;background:var(--gold-dim);border:3px solid var(--ink);box-shadow:0 2px 8px rgba(28,23,18,.45)}
 #stamp{position:absolute;bottom:4px;left:8px;z-index:1000;font-size:8.5px;letter-spacing:.12em;color:var(--muted);background:rgba(244,240,232,.85);padding:1px 6px;border-radius:2px;font-family:'Questrial'}
 .leaflet-popup-content-wrapper{border-radius:2px;background:var(--cream);color:var(--ink);box-shadow:0 3px 18px rgba(28,23,18,.22)}
 .leaflet-popup-tip{background:var(--cream)}
@@ -84,11 +98,16 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .pp-stats{font-size:11.5px;color:var(--muted);background:var(--cream-2);border-left:2px solid var(--gold-dim);border-radius:0 2px 2px 0;padding:6px 9px;margin:5px 0}
 .pp-stats b{color:var(--ink);font-family:'Bodoni Moda',serif;font-size:13px}
 .pp-remark{color:var(--muted);font-style:italic;font-size:11.5px;margin-top:3px}
-.pp-tel{display:inline-block;margin-top:4px;font-weight:400;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--gold-dim);border-radius:2px;padding:4px 10px;font-size:12px;font-family:'Bodoni Moda',serif}
+.pp-tel{display:inline-block;margin-top:4px;margin-right:6px;font-weight:400;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--gold-dim);border-radius:2px;padding:4px 10px;font-size:12px;font-family:'Bodoni Moda',serif}
 .pp-checkin{display:inline-block;margin-top:4px;margin-left:5px;background:var(--gold);color:var(--cream);border-radius:2px;padding:4px 11px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;font-family:'Questrial'}
 .pp-toggle{display:inline-block;margin-top:6px;margin-right:10px;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline}
 .pp-toggle.en{color:var(--ok)}
 .pp-del{display:inline-block;margin-top:6px;color:var(--z1);font-size:11px;cursor:pointer;text-decoration:underline}
+#eAdminZone{margin-top:16px}
+#eAdminZone .divider{border-top:1px solid var(--cream-4);margin:14px 0 12px;padding-top:12px}
+#eAdminZone .admin-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--z1);margin-bottom:8px}
+#eAdminZone button{width:100%;margin-top:6px}
+#eAdminZone .btn.danger{background:var(--z1);color:#fff}
 .pp-offband{background:var(--off);color:#fff;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border-radius:2px;padding:2px 7px;display:inline-block;margin-bottom:4px}
 .sheet{position:fixed;left:0;right:0;bottom:-110%;background:var(--cream);border-top:2px solid var(--gold-dim);padding:20px 18px 28px;z-index:1100;transition:bottom .25s;box-shadow:0 -6px 30px rgba(28,23,18,.25);max-width:520px;margin:0 auto;max-height:85vh;overflow-y:auto}
 .sheet.open{bottom:0}
@@ -201,18 +220,58 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <span class="chip z8" data-z="8"><span class="dot"></span>TN·MH</span>
     <span class="chip za" data-z="9"><span class="dot"></span>New</span>
     <span class="chip zoff off" data-z="0"><span class="dot"></span>Disabled</span>
+    <span id="customChipSlot"></span>
+    <button class="btn ghost" id="newZoneBtn" style="display:none;flex:0 0 auto;padding:8px 11px;font-size:10.5px">+ Zone</button>
   </div>
 </header>
 <div id="map"></div>
+
+<div class="sheet" id="zoneSheet">
+  <h3>Create a new zone</h3>
+  <div class="sub">Add a coverage group beyond the built-in ones — it'll appear as a chip and in every "Coverage group" dropdown immediately.</div>
+  <label>Zone name</label><input id="zName" placeholder="e.g. Vizag Belt">
+  <label>Colour</label><input id="zColorPick" type="color" value="#7A5230" style="height:44px;padding:4px">
+  <div class="sheet-btns">
+    <button class="btn ghost" id="zCancel">Cancel</button>
+    <button class="btn" id="zSave">Create zone</button>
+  </div>
+</div>
 <div class="hint" id="hint">Tap the map where the new store is located</div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v13.0</div>
+
+<div id="locPicker">
+  <div style="position:relative">
+    <input id="locSearch" type="search" placeholder="Search address or area…">
+    <div id="locSuggest"></div>
+  </div>
+  <div id="locBar">
+    <span id="locHelp">Drag the pin, tap the map, or search to set the exact spot</span>
+    <div class="locBtns">
+      <button class="btn ghost" id="locCancel">Cancel</button>
+      <button class="btn" id="locConfirm">Use this location →</button>
+    </div>
+  </div>
+</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v17.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
-  <label>Store name</label><input id="fName">
-  <label>Contact no.</label><input id="fTel" inputmode="tel">
-  <label>Area / Town</label><input id="fArea">
-  <label>Group</label>
+  <div id="fLocStatus" style="font-size:12px;color:var(--ok);margin-bottom:6px">📍 Location set</div>
+  <button class="btn ghost" id="fMoveBtn" style="width:100%;margin-bottom:4px">Change location</button>
+  <label>Store name</label><input id="fName" placeholder="e.g. Sri Lakshmi Jewellers">
+  <label>Mobile no.</label><input id="fTel" inputmode="tel" placeholder="e.g. 98480 12345">
+  <label>State</label>
+  <select id="fState">
+    <option value="Telangana">Telangana</option>
+    <option value="Andhra Pradesh">Andhra Pradesh</option>
+    <option value="Karnataka">Karnataka</option>
+    <option value="Tamil Nadu">Tamil Nadu</option>
+    <option value="Maharashtra">Maharashtra</option>
+    <option value="Other">Other</option>
+  </select>
+  <label>District / City</label><input id="fDistrict" placeholder="e.g. Hyderabad">
+  <label>Area</label><input id="fArea" placeholder="e.g. Kompally">
+  <label>Pincode</label><input id="fPin" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
+  <label>Coverage group (for map colour)</label>
   <select id="fZone">
     <option value="1">Hyderabad Zone 1 — Central, Old City & South</option>
     <option value="2">Hyderabad Zone 2 — East</option>
@@ -230,19 +289,31 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 </div>
 
 <div class="sheet" id="editSheet">
-  <h3>Correct retailer details</h3>
+  <h3>Edit store details</h3>
   <div class="sub" id="editOrigName"></div>
   <label>Store name</label><input id="eName">
   <label>Contact no.</label><input id="eTel" inputmode="tel">
   <label>Area / Town</label><input id="eArea">
   <label>Full address</label><textarea id="eAddr" rows="2"></textarea>
+  <label>Coverage group</label>
+  <select id="eZone">
+    <option value="1">Hyderabad Zone 1 — Central, Old City & South</option>
+    <option value="2">Hyderabad Zone 2 — East</option>
+    <option value="3">Hyderabad Zone 3 — North</option>
+    <option value="4">Hyderabad Zone 4 — West</option>
+    <option value="5">Telangana Towns</option>
+    <option value="6">Andhra Pradesh</option>
+    <option value="7">Karnataka</option>
+    <option value="8">Tamil Nadu / Maharashtra</option>
+  </select>
   <label>Location on map</label>
   <div id="eLocStatus" style="font-size:12px;color:var(--muted);margin-bottom:6px">Using current pin location.</div>
   <button class="btn ghost" id="eMoveBtn" style="width:100%">📍 Tap map to move this pin</button>
   <div class="sheet-btns">
     <button class="btn ghost" id="eCancel">Cancel</button>
-    <button class="btn" id="eSave">Save correction</button>
+    <button class="btn" id="eSave">Save changes</button>
   </div>
+  <div id="eAdminZone"></div>
 </div>
 
 <div class="sheet" id="ciSheet">
@@ -308,6 +379,7 @@ const COL_DISABLED  = "map_disabled";
 const COL_PROFILES  = "map_profiles";
 const COL_REMINDERS = "map_reminders";
 const COL_OVERRIDES = "map_overrides";
+const COL_ZONES = "map_zones";
 const USERNAME_DOMAIN = "bharnigems.local";  // internal only — your team never sees this
 /* ============================================================
    STEP 3 — CREATE YOUR TEAM'S LOGIN ACCOUNTS (username-based)
@@ -343,6 +415,9 @@ const STORES = [{"n": "Ishtara Gems and Jewellers", "c": "9985077775", "a": "Abi
 const ZC = {1:'#B03A48',2:'#2E7D6B',3:'#3E5FA8',4:'#8E5BA6',5:'#C2703D',6:'#2E93A8',7:'#5B8C3E',8:'#8C4A6B',9:'#8a6f2e'};
 const ZN = {1:'Hyd Zone 1 · Central & Old City',2:'Hyd Zone 2 · East',3:'Hyd Zone 3 · North',4:'Hyd Zone 4 · West',
             5:'Telangana Towns',6:'Andhra Pradesh',7:'Karnataka',8:'Tamil Nadu / Maharashtra',9:'New retailer'};
+let customZones={}; // docId -> {name,color}, admin-created zones beyond the built-in 8
+function zColor(zk){ return ZC[zk] || (customZones[zk] && customZones[zk].color) || '#777'; }
+function zName(zk){ return ZN[zk] || (customZones[zk] && customZones[zk].name) || 'Zone'; }
 const map = L.map('map').setView([16.6,79.2],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
 
@@ -382,6 +457,7 @@ function enterApp(profile){
   document.getElementById('login').style.display='none';
   document.getElementById('logoutRow').style.display='block';
   document.getElementById('whoAmI').textContent=session.name+(session.role==='admin'?' · admin':session.role==='manager'?' · manager':'');
+  document.getElementById('newZoneBtn').style.display = session.role==='admin' ? '' : 'none';
   // add-retailer is available to every signed-in user, regardless of role
   startReminderListener();
   render();
@@ -455,19 +531,15 @@ function popupHtml(s, added){
   const isOff = !!disabled[s.id];
   const st=vStats[s.id];
   const tel=s.c?`<a class="pp-tel" href="tel:${String(s.c).replace(/[^0-9+]/g,'')}">${s.c}</a>`:'';
+  const gmaps=`<a class="pp-tel" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=driving" target="_blank" rel="noopener">🧭 Navigate</a>`;
   const stats=st?`<div class="pp-stats"><b>${st.count}</b> visit${st.count>1?'s':''} · last ${fmtD(st.last)} by ${st.lastBy||'—'}${st.lastRemark?`<div class="pp-remark">“${st.lastRemark}”</div>`:''}</div>`:`<div class="pp-stats" style="color:#a09680">Not visited yet</div>`;
   const offband=isOff?'<span class="pp-offband">Disabled</span><br>':'';
-  const isAdmin = session && session.role==='admin';
-  const toggle = !isAdmin ? '' : (isOff
-    ?`<span class="pp-toggle en" onclick="enableStore('${s.id}')">Enable store</span>`
-    :`<span class="pp-toggle" onclick="disableStore('${s.id}','${(s.n||'').replace(/'/g,"\\'")}')">Disable store</span>`);
-  const del=(added&&isAdmin)?`<span class="pp-del" onclick="delAdded('${s.id}')">remove retailer</span>`:'';
-  const editLink=session?`<span class="pp-toggle" onclick="openEdit('${s.id}')">Correct details</span>`:'';
+  const editLink=session?`<span class="pp-toggle" onclick="openEdit('${s.id}')">Edit store details</span>`:'';
   const by=added&&s.by?`<div class="pp-remark">added by ${s.by}</div>`:'';
   const checkin=isOff?'':`<button class="pp-checkin" onclick="openCheckin('${s.id}')">✓ Check in</button>`;
-  const adminRow = (toggle||del||editLink) ? `<br>${toggle}${editLink}${del}` : '';
+  const adminRow = editLink ? `<br>${editLink}` : '';
   const zk = effectiveZone(s);
-  return `${offband}<div class="pp-name">${s.n}</div><div class="pp-area" style="color:${ZC[zk]}">${s.a} — ${ZN[zk]}</div>${stats}${tel}${checkin}${adminRow}<div style="color:#888;font-size:11px;margin-top:4px">${s.ad||''}</div>`;
+  return `${offband}<div class="pp-name">${s.n}</div><div class="pp-area" style="color:${zColor(zk)}">${s.a} — ${zName(zk)}</div>${stats}${tel}${gmaps}${checkin}${adminRow}${by}<div style="color:#888;font-size:11px;margin-top:4px">${s.ad||''}</div>`;
 }
 let overrides={};
 function allStores(){
@@ -480,12 +552,16 @@ function effectiveZone(s){
   const ageMs = (s.ts && s.ts.toMillis) ? Date.now()-s.ts.toMillis() : 0;
   return ageMs > NEW_RETAILER_DAYS*864e5 ? s.z : 9; // merges into its real zone after 60 days
 }
+function computeTodayCheckins(){
+  if(!session) return 0;
+  const day=todayStr();
+  return visits.filter(v=>v.by===session.name && v.ts && v.ts.toMillis && new Date(v.ts.toMillis()).toISOString().slice(0,10)===day).length;
+}
 function render(){
   markers.forEach(m=>map.removeLayer(m)); markers=[];
-  const q=query.trim().toLowerCase(); let shown=0, offCount=0;
+  const q=query.trim().toLowerCase(); let shown=0;
   allStores().forEach(s=>{
     const isOff=!!disabled[s.id];
-    if(isOff) offCount++;
     const zk=effectiveZone(s);
     if(q){
       if(!(s.n+' '+s.a).toLowerCase().includes(q)) return; // search shows matches regardless of zone chips
@@ -498,45 +574,74 @@ function render(){
       radius:s.live?10:8,
       color:isOff?'#8f8674':(visited?'#2f7a52':'#1c1712'),
       weight:visited&&!isOff?2.5:1,
-      fillColor:isOff?'#b5ab98':ZC[zk],
+      fillColor:isOff?'#b5ab98':zColor(zk),
       fillOpacity:isOff?.55:.92,
       dashArray:isOff?'2,3':null
     }).bindPopup(()=>popupHtml(s,!!s.live));
     m._s=s; m.addTo(map); markers.push(m); shown++;
   });
-  const hint = shown===0 ? ' — select a zone above or search to see retailers' : '';
-  document.getElementById('tally').innerHTML=`<span id="live" class="${db?'on':''}"></span><b>${shown}</b> stores${hint} · <b>${visits.length}</b> check-ins · <b>${offCount}</b> disabled<br>green ring = visited in 30 days`;
-}
-window.delAdded=function(id){
-  if(!session||session.role!=='admin'){ alert('Only admins can remove retailers.'); map.closePopup(); return; }
-  if(db&&confirm('Remove this retailer for everyone?'))db.collection(COL_RETAILERS).doc(id).delete();
-  map.closePopup();
-};
-window.disableStore=function(id,name){
-  if(!db||!session) return;
-  if(session.role!=='admin'){ alert('Only admins can disable retailers.'); map.closePopup(); return; }
-  if(confirm('Disable "'+name+'"? It will be hidden from the map and excluded from coverage counts for everyone. You can enable it again anytime.')){
-    db.collection(COL_DISABLED).doc(id).set({sn:name,by:session.name,ts:firebase.firestore.FieldValue.serverTimestamp()});
+  const todayCount=computeTodayCheckins();
+  let contextLine='';
+  if(q){
+    contextLine=`<b>${shown}</b> stores matching "${query.trim()}"`;
+  }else{
+    const activeKeys=Object.keys(zoneOn).filter(k=>zoneOn[k] && k!=='0' && k!=='9');
+    if(activeKeys.length===1){ contextLine=`<b>${shown}</b> stores in ${zName(activeKeys[0]).split(' · ')[0]}`; }
   }
-  map.closePopup();
-};
-window.enableStore=function(id){
-  if(!session||session.role!=='admin'){ alert('Only admins can enable retailers.'); map.closePopup(); return; }
-  if(db) db.collection(COL_DISABLED).doc(id).delete();
-  map.closePopup();
-};
+  document.getElementById('tally').innerHTML=`<span id="live" class="${db?'on':''}"></span>Today: <b>${todayCount}</b> check-in${todayCount===1?'':'s'}`+(contextLine?`<br>${contextLine}`:'');
+}
 
-document.querySelectorAll('.chip').forEach(ch=>{
-  if(!zoneOn[+ch.dataset.z]) ch.classList.add('off'); // reflect the all-off starting state
+function parseZoneKey(raw){ return /^\d+$/.test(raw) ? +raw : raw; } // built-ins are plain digits; custom zone ids are Firestore doc ids
+function wireChip(ch){
+  const z=parseZoneKey(ch.dataset.z);
+  if(!zoneOn[z]) ch.classList.add('off');
   ch.onclick=()=>{
-    const z=+ch.dataset.z;
     zoneOn[z]=!zoneOn[z]; ch.classList.toggle('off',!zoneOn[z]); render();
-    if(zoneOn[z]&&z>0){ // fit to newly enabled group
+    if(zoneOn[z]&&z!==0&&z!==9){ // fit to newly enabled group
       const pts=allStores().filter(s=>!disabled[s.id]&&(effectiveZone(s)===z)).map(s=>[s.lat,s.lng]);
       if(pts.length) map.fitBounds(pts,{padding:[30,30]});
     }
   };
-});
+}
+document.querySelectorAll('.chip').forEach(wireChip);
+function renderCustomChips(){
+  const slot=document.getElementById('customChipSlot');
+  slot.innerHTML='';
+  Object.keys(customZones).forEach(id=>{
+    const z=customZones[id];
+    const ch=document.createElement('span');
+    ch.className='chip'; ch.dataset.z=id;
+    ch.style.color=z.color; ch.style.borderColor=z.color;
+    ch.innerHTML=`<span class="dot" style="background:${z.color}"></span>${z.name}`;
+    slot.appendChild(ch);
+    wireChip(ch);
+  });
+}
+function refreshZoneDropdowns(){
+  ['fZone','eZone'].forEach(selId=>{
+    const sel=document.getElementById(selId);
+    const current=sel.value;
+    sel.querySelectorAll('option[data-custom]').forEach(o=>o.remove());
+    Object.keys(customZones).forEach(id=>{
+      const o=document.createElement('option');
+      o.value=id; o.dataset.custom='1'; o.textContent='Custom: '+customZones[id].name;
+      sel.appendChild(o);
+    });
+    if([...sel.options].some(o=>o.value===current)) sel.value=current;
+  });
+}
+document.getElementById('newZoneBtn').onclick=()=>{
+  document.getElementById('zName').value=''; document.getElementById('zColorPick').value='#7A5230';
+  document.getElementById('zoneSheet').classList.add('open');
+};
+document.getElementById('zCancel').onclick=()=>document.getElementById('zoneSheet').classList.remove('open');
+document.getElementById('zSave').onclick=()=>{
+  const name=document.getElementById('zName').value.trim(); if(!name)return document.getElementById('zName').focus();
+  const color=document.getElementById('zColorPick').value;
+  db.collection(COL_ZONES).add({name:name,color:color,by:session.name,ts:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(()=>document.getElementById('zoneSheet').classList.remove('open'))
+    .catch(e=>alert('Could not create zone — '+e.message));
+};
 const suggestBox=document.getElementById('suggest');
 document.getElementById('q').addEventListener('input',e=>{
   query=e.target.value; render(); showSuggestions(query);
@@ -568,24 +673,114 @@ function showSuggestions(q){
   });
 }
 
-/* ---- add retailer ---- */
-let addMode=false,pendingLL=null;
+/* ---- add retailer: Google-Maps-style location picker ---- */
+let addMode=false,pendingLL=null,addPinMarker=null;
 const hint=document.getElementById('hint');
+const goldPinIcon=L.divIcon({className:'',html:'<div class="pin-dot"></div>',iconSize:[22,22],iconAnchor:[11,11]});
+const STATE_DEFAULT_ZONE={'Telangana':'5','Andhra Pradesh':'6','Karnataka':'7','Tamil Nadu':'8','Maharashtra':'8','Other':'6'};
+document.getElementById('fState').addEventListener('change',e=>{
+  const dz=STATE_DEFAULT_ZONE[e.target.value]; if(dz) document.getElementById('fZone').value=dz;
+});
+function resetAddForm(){
+  ['fName','fTel','fDistrict','fArea','fPin'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('fState').value='Telangana';
+  document.getElementById('fZone').value='5';
+}
+function placeAddPin(ll){
+  pendingLL=ll;
+  if(addPinMarker) addPinMarker.setLatLng([ll.lat,ll.lng]);
+  else{
+    addPinMarker=L.marker([ll.lat,ll.lng],{draggable:true,icon:goldPinIcon}).addTo(map);
+    addPinMarker.on('drag',e=>{ pendingLL=e.target.getLatLng(); });
+  }
+}
+function removeAddPin(){ if(addPinMarker){ map.removeLayer(addPinMarker); addPinMarker=null; } }
+function openLocationPicker(startAt){
+  document.getElementById('locSearch').value='';
+  document.getElementById('locSuggest').classList.remove('show');
+  document.getElementById('locPicker').classList.add('open');
+  if(startAt){
+    placeAddPin(startAt); map.setView([startAt.lat,startAt.lng],16);
+  }else if(navigator.geolocation){
+    document.getElementById('locHelp').textContent='Detecting your location…';
+    navigator.geolocation.getCurrentPosition(
+      pos=>{ const ll={lat:pos.coords.latitude,lng:pos.coords.longitude}; placeAddPin(ll); map.setView([ll.lat,ll.lng],16);
+        document.getElementById('locHelp').textContent='Drag the pin, tap the map, or search to set the exact spot'; },
+      ()=>{ placeAddPin(map.getCenter()); document.getElementById('locHelp').textContent='Drag the pin, tap the map, or search to set the exact spot'; },
+      {enableHighAccuracy:true,timeout:8000,maximumAge:30000}
+    );
+  }else{
+    placeAddPin(map.getCenter());
+  }
+}
+map.on('click',e=>{ if(!document.getElementById('locPicker').classList.contains('open'))return; placeAddPin(e.latlng); });
 document.getElementById('addBtn').onclick=()=>{
   if(!session){ alert('Please sign in first.'); return; }
-  addMode=true;hint.style.display='block';
+  openLocationPicker(null);
 };
-map.on('click',e=>{ if(!addMode)return; pendingLL=e.latlng;addMode=false;hint.style.display='none';
-  ['fName','fTel','fArea'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('addSheet').classList.add('open');});
-document.getElementById('fCancel').onclick=()=>document.getElementById('addSheet').classList.remove('open');
+document.getElementById('locCancel').onclick=()=>{
+  document.getElementById('locPicker').classList.remove('open'); removeAddPin();
+};
+document.getElementById('locConfirm').onclick=()=>{
+  if(!pendingLL){ alert('Set a location first — drag the pin, tap the map, or search.'); return; }
+  document.getElementById('locPicker').classList.remove('open');
+  resetAddForm();
+  document.getElementById('fLocStatus').textContent='📍 Location set';
+  document.getElementById('addSheet').classList.add('open');
+};
+document.getElementById('fMoveBtn').onclick=()=>{
+  document.getElementById('addSheet').classList.remove('open');
+  openLocationPicker(pendingLL); // keep adjusting from where it already was
+};
+document.getElementById('fCancel').onclick=()=>{ document.getElementById('addSheet').classList.remove('open'); removeAddPin(); };
+
+let locSearchTimer=null;
+document.getElementById('locSearch').addEventListener('input',e=>{
+  const q=e.target.value.trim();
+  clearTimeout(locSearchTimer);
+  if(q.length<3){ document.getElementById('locSuggest').classList.remove('show'); return; }
+  locSearchTimer=setTimeout(()=>runLocationSearch(q),450);
+});
+function runLocationSearch(q){
+  const box=document.getElementById('locSuggest');
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=in&q='+encodeURIComponent(q))
+    .then(r=>r.json())
+    .then(results=>{
+      if(!results||!results.length){ box.innerHTML='<div class="lsug" style="color:var(--muted);cursor:default">No matches — try a more specific address</div>'; box.classList.add('show'); return; }
+      box.innerHTML=results.map((r,i)=>`<div class="lsug" data-i="${i}">${r.display_name}</div>`).join('');
+      box.classList.add('show');
+      box.querySelectorAll('.lsug').forEach(el=>{
+        el.onclick=()=>{
+          const r=results[+el.dataset.i]; if(!r||!r.lat) return;
+          const ll={lat:+r.lat,lng:+r.lon};
+          placeAddPin(ll); map.setView([ll.lat,ll.lng],16);
+          box.classList.remove('show');
+        };
+      });
+    })
+    .catch(()=>{ box.innerHTML='<div class="lsug" style="color:var(--muted);cursor:default">Search failed — check internet</div>'; box.classList.add('show'); });
+}
+
 document.getElementById('fSave').onclick=()=>{
   const n=document.getElementById('fName').value.trim(); if(!n)return document.getElementById('fName').focus();
-  db.collection(COL_RETAILERS).add({n:n,c:document.getElementById('fTel').value.trim(),
-    a:document.getElementById('fArea').value.trim()||'—',z:+document.getElementById('fZone').value,by:session.name,
-    ad:'Added '+new Date().toLocaleDateString('en-IN'),lat:+pendingLL.lat.toFixed(5),lng:+pendingLL.lng.toFixed(5),
-    ts:firebase.firestore.FieldValue.serverTimestamp()})
-    .then(()=>document.getElementById('addSheet').classList.remove('open'))
+  const district=document.getElementById('fDistrict').value.trim();
+  const state=document.getElementById('fState').value;
+  const pin=document.getElementById('fPin').value.trim();
+  const area=document.getElementById('fArea').value.trim()||'—';
+  const addrParts=[district,state].filter(Boolean).join(', ')+(pin?' - '+pin:'');
+  const zone=parseZoneKey(document.getElementById('fZone').value);
+  const payload={n:n,c:document.getElementById('fTel').value.trim(),a:area,z:zone,by:session.name,
+    state:state,district:district,pincode:pin,
+    ad:addrParts||('Added '+new Date().toLocaleDateString('en-IN')),
+    lat:+pendingLL.lat.toFixed(5),lng:+pendingLL.lng.toFixed(5),
+    ts:firebase.firestore.FieldValue.serverTimestamp()};
+  db.collection(COL_RETAILERS).add(payload)
+    .then(docRef=>{
+      document.getElementById('addSheet').classList.remove('open');
+      removeAddPin();
+      // chain straight into check-in so remarks / a reminder can be added immediately
+      openCheckinWithStore({id:docRef.id,n:payload.n,a:payload.a,z:payload.z,live:true,lat:payload.lat,lng:payload.lng});
+    })
     .catch(e=>alert('Could not save — '+e.message));
 };
 
@@ -600,9 +795,44 @@ window.openEdit=function(id){
   document.getElementById('eTel').value=editStore.c||'';
   document.getElementById('eArea').value=editStore.a||'';
   document.getElementById('eAddr').value=editStore.ad||'';
+  document.getElementById('eZone').value=String(effectiveZone(editStore));
   document.getElementById('eLocStatus').textContent='Using current pin location.';
+  buildAdminZone(editStore);
   map.closePopup();
   document.getElementById('editSheet').classList.add('open');
+};
+function buildAdminZone(store){
+  const box=document.getElementById('eAdminZone');
+  if(!session || session.role!=='admin'){ box.innerHTML=''; return; }
+  const isOff=!!disabled[store.id];
+  let html='<div class="divider"><div class="admin-label">Admin controls</div>';
+  html += isOff
+    ? `<button class="btn ghost" onclick="enableStoreFromEdit()">Enable this store</button>`
+    : `<button class="btn ghost" onclick="disableStoreFromEdit()">Disable this store</button>`;
+  if(store.live){
+    html += `<button class="btn danger" onclick="delAddedFromEdit()">Remove retailer entirely</button>`;
+  }
+  html += '</div>';
+  box.innerHTML=html;
+}
+window.disableStoreFromEdit=function(){
+  if(!editStore||!session||session.role!=='admin') return;
+  if(confirm('Disable "'+editStore.n+'"? It will be hidden from the map and excluded from coverage counts for everyone. You can enable it again anytime.')){
+    db.collection(COL_DISABLED).doc(editStore.id).set({sn:editStore.n,by:session.name,ts:firebase.firestore.FieldValue.serverTimestamp()})
+      .then(()=>buildAdminZone(editStore));
+  }
+};
+window.enableStoreFromEdit=function(){
+  if(!editStore||!session||session.role!=='admin') return;
+  db.collection(COL_DISABLED).doc(editStore.id).delete().then(()=>buildAdminZone(editStore));
+};
+window.delAddedFromEdit=function(){
+  if(!editStore||!session||session.role!=='admin') return;
+  if(confirm('Remove this retailer for everyone? This cannot be undone.')){
+    db.collection(COL_RETAILERS).doc(editStore.id).delete()
+      .then(()=>document.getElementById('editSheet').classList.remove('open'))
+      .catch(e=>alert('Could not remove — '+e.message));
+  }
 };
 document.getElementById('eMoveBtn').onclick=()=>{
   editMoveMode=true;
@@ -620,11 +850,13 @@ map.on('click',e=>{
 document.getElementById('eCancel').onclick=()=>document.getElementById('editSheet').classList.remove('open');
 document.getElementById('eSave').onclick=()=>{
   if(!editStore) return;
+  const zoneVal=document.getElementById('eZone').value;
   const patch={
     n:document.getElementById('eName').value.trim(),
     c:document.getElementById('eTel').value.trim(),
     a:document.getElementById('eArea').value.trim(),
-    ad:document.getElementById('eAddr').value.trim()
+    ad:document.getElementById('eAddr').value.trim(),
+    z: parseZoneKey(zoneVal)
   };
   if(!patch.n) return document.getElementById('eName').focus();
   if(editNewLL){ patch.lat=+editNewLL.lat.toFixed(5); patch.lng=+editNewLL.lng.toFixed(5); }
@@ -633,19 +865,23 @@ document.getElementById('eSave').onclick=()=>{
     : db.collection(COL_OVERRIDES).doc(editStore.id);
   const write = editStore.live ? target.update(patch) : target.set(patch,{merge:true});
   write.then(()=>document.getElementById('editSheet').classList.remove('open'))
-    .catch(e=>alert('Could not save correction — '+e.message));
+    .catch(e=>alert('Could not save — '+e.message));
 };
 
 /* ---- check-in ---- */
 let ciStore=null;
-window.openCheckin=function(id){
+window.openCheckinWithStore=function(store){
   if(!session){ alert('Please sign in first.'); return; }
-  ciStore=allStores().find(s=>s.id===id); if(!ciStore)return;
+  ciStore=store; if(!ciStore)return;
   document.getElementById('ciStore').textContent=ciStore.n+' · '+ciStore.a;
   document.getElementById('ciRemarks').value='';
   document.getElementById('ciRemindDate').value='';
   map.closePopup();
   document.getElementById('ciSheet').classList.add('open');
+};
+window.openCheckin=function(id){
+  const s=allStores().find(s=>s.id===id); if(!s)return;
+  openCheckinWithStore(s);
 };
 document.getElementById('ciCancel').onclick=()=>document.getElementById('ciSheet').classList.remove('open');
 document.getElementById('ciSave').onclick=()=>{
@@ -735,7 +971,7 @@ function drawReport(){
       return `<div class="store-row ${qterm?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span class="vc">${st.n}×</span></div><div class="visit-log">${log}</div></div>`;
     }).join('');
     const covered=Object.keys(g.stores).length, inArea=(storeTotals[a]||new Set()).size;
-    html+=`<div class="area-card ${qterm?'open':''}"><div class="zbar" style="background:${ZC[g.z]||'#999'}"></div>
+    html+=`<div class="area-card ${qterm?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
       <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="an">${a}<small>${covered} of ${inArea||'?'} active stores covered</small></div>
         <div class="ac"><b>${g.n}</b>visits</div></div>
@@ -759,7 +995,7 @@ window.exportVisits=function(){
   });
   let csv='Date,Time,Store,Area,Group,Salesman,Remarks,GPS Lat,GPS Lng\n';
   rows.forEach(v=>{const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
-    csv+=`"${t?t.toLocaleDateString('en-IN'):''}","${t?t.toLocaleTimeString('en-IN'):''}","${v.sn}","${v.a||''}","${ZN[v.z]||''}","${v.by||''}","${(v.r||'').replace(/"/g,"'")}",${v.glat||''},${v.glng||''}\n`;});
+    csv+=`"${t?t.toLocaleDateString('en-IN'):''}","${t?t.toLocaleTimeString('en-IN'):''}","${v.sn}","${v.a||''}","${zName(v.z)}","${v.by||''}","${(v.r||'').replace(/"/g,"'")}",${v.glat||''},${v.glng||''}\n`;});
   const b=new Blob([csv],{type:'text/csv'}),u=URL.createObjectURL(b),l=document.createElement('a');
   l.href=u;l.download='bharni_visits.csv';l.click();URL.revokeObjectURL(u);
 };
@@ -780,6 +1016,10 @@ try{
     e=>alert('Disable-list sync error: '+e.message));
   db.collection(COL_OVERRIDES).onSnapshot(s=>{overrides={};s.docs.forEach(d=>overrides[d.id]=d.data());render();},
     e=>alert('Corrections sync error: '+e.message));
+  db.collection(COL_ZONES).onSnapshot(s=>{
+    customZones={}; s.docs.forEach(d=>customZones[d.id]=d.data());
+    renderCustomChips(); refreshZoneDropdowns(); render();
+  }, e=>alert('Zones sync error: '+e.message));
 
   auth.onAuthStateChanged(user=>{
     if(!user){ session=null; return; }
@@ -798,5 +1038,3 @@ try{
 </script>
 </body>
 </html>
-
-
