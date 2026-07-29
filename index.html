@@ -91,6 +91,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 #locHelp{display:block;font-size:11.5px;color:var(--muted);margin-bottom:9px;line-height:1.4}
 .locBtns{display:flex;gap:8px}
 .locBtns button{flex:1}
+#locRefresh,#locCancel{flex:0.8}
+#locConfirm{flex:1.6}
 .pin-dot{width:22px;height:22px;border-radius:50%;background:var(--gold-dim);border:3px solid var(--ink);box-shadow:0 2px 8px rgba(28,23,18,.45)}
 #stamp{position:absolute;bottom:4px;left:8px;z-index:1000;font-size:8.5px;letter-spacing:.12em;color:var(--muted);background:rgba(244,240,232,.85);padding:1px 6px;border-radius:2px;font-family:'Questrial'}
 .leaflet-popup-content-wrapper{border-radius:2px;background:var(--cream);color:var(--ink);box-shadow:0 3px 18px rgba(28,23,18,.22)}
@@ -224,7 +226,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <span class="chip z11" data-z="11"><span class="dot"></span>BLR South</span>
     <span class="chip z12" data-z="12"><span class="dot"></span>Kolar</span>
     <span class="chip z8" data-z="8"><span class="dot"></span>TN·MH</span>
-    <span class="chip za" data-z="9"><span class="dot"></span>New</span>
+    <span class="chip za" data-z="9"><span class="dot"></span>Prospects</span>
     <span class="chip zoff off" data-z="0"><span class="dot"></span>Disabled</span>
     <span id="customChipSlot"></span>
     <button class="btn ghost" id="newZoneBtn" style="display:none;flex:0 0 auto;padding:8px 11px;font-size:10.5px">+ Zone</button>
@@ -242,7 +244,6 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <button class="btn" id="zSave">Create zone</button>
   </div>
 </div>
-<div class="hint" id="hint">Tap the map where the new store is located</div>
 
 <div id="locPicker">
   <div style="position:relative">
@@ -252,12 +253,13 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <div id="locBar">
     <span id="locHelp">Drag the pin, tap the map, or search to set the exact spot</span>
     <div class="locBtns">
+      <button class="btn ghost" id="locRefresh">🔄 Refresh</button>
       <button class="btn ghost" id="locCancel">Cancel</button>
       <button class="btn" id="locConfirm">Use this location →</button>
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v18.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v21.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -331,6 +333,29 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 <div class="sheet" id="ciSheet">
   <h3>Check in</h3>
   <div class="sub" id="ciStore"></div>
+  <div id="ciOutcomeBox" style="display:none">
+    <label>Did they place an order this visit?</label>
+    <select id="ciOutcome">
+      <option value="">— Select —</option>
+      <option value="sold">Sold — placed an order</option>
+      <option value="not_sold">Not sold this visit</option>
+    </select>
+    <div id="ciReasonBox" style="display:none">
+      <label>Reason</label>
+      <select id="ciReason">
+        <option value="">— Select a reason —</option>
+        <option value="Already has a regular supplier">Already has a regular supplier</option>
+        <option value="Price too high">Price too high</option>
+        <option value="Didn't like the designs shown">Didn't like the designs shown</option>
+        <option value="Budget / cash-flow constraints">Budget / cash-flow constraints</option>
+        <option value="Wants credit period we don't offer">Wants credit period we don't offer</option>
+        <option value="Owner/decision-maker not available">Owner/decision-maker not available</option>
+        <option value="Still comparing with other suppliers">Still comparing with other suppliers</option>
+        <option value="Not interested at this time">Not interested at this time</option>
+        <option value="Other">Other (see remarks)</option>
+      </select>
+    </div>
+  </div>
   <label>Remarks (order taken, stock shown, follow-up…)</label>
   <textarea id="ciRemarks" rows="3" placeholder="e.g. Showed new solitaire line, order ₹— , revisit after 15 days"></textarea>
   <label>Remind me to revisit on (optional)</label>
@@ -427,7 +452,7 @@ const STORES = [{"n": "Ishtara Gems and Jewellers", "c": "9985077775", "a": "Abi
 const ZC = {1:'#B03A48',2:'#2E7D6B',3:'#3E5FA8',4:'#8E5BA6',5:'#C2703D',6:'#2E93A8',7:'#5B8C3E',8:'#8C4A6B',9:'#8a6f2e',
             10:'#7A9E3E',11:'#3E9E8A',12:'#9E7A3E'};
 const ZN = {1:'Hyd Zone 1 · Central & Old City',2:'Hyd Zone 2 · East',3:'Hyd Zone 3 · North',4:'Hyd Zone 4 · West',
-            5:'Telangana Towns',6:'Andhra Pradesh',7:'Karnataka Towns',8:'Tamil Nadu / Maharashtra',9:'New retailer',
+            5:'Telangana Towns',6:'Andhra Pradesh',7:'Karnataka Towns',8:'Tamil Nadu / Maharashtra',9:'Prospect · not yet purchased',
             10:'Bengaluru North & West',11:'Bengaluru South & East',12:'Kolar Belt'};
 let customZones={}; // docId -> {name,color}, admin-created zones beyond the built-in 8
 function zColor(zk){ return ZC[zk] || (customZones[zk] && customZones[zk].color) || '#777'; }
@@ -560,11 +585,16 @@ function allStores(){
   const base = STORES.map(s => overrides[s.id] ? Object.assign({},s,overrides[s.id]) : s);
   return base.concat(liveStores.map(s=>Object.assign({},s,{live:true})));
 }
-const NEW_RETAILER_DAYS = 90;
+const FAR_CHECKIN_METERS = 100; // flag check-ins 100m or more from the store's saved pin
+function distMeters(lat1,lng1,lat2,lng2){
+  const R=6371000, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
 function effectiveZone(s){
-  if(!s.live) return s.z;
-  const ageMs = (s.ts && s.ts.toMillis) ? Date.now()-s.ts.toMillis() : 0;
-  return ageMs > NEW_RETAILER_DAYS*864e5 ? s.z : 9; // merges into its real zone after 90 days
+  if(!s.live) return s.z; // the original 437 stores are already established customers, unaffected
+  return s.saleStatus==='sold' ? s.z : 9; // a new retailer stays under "Prospects" until they place a first order
 }
 function computeTodayCheckins(){
   if(!session) return 0;
@@ -688,8 +718,7 @@ function showSuggestions(q){
 }
 
 /* ---- add retailer: Google-Maps-style location picker ---- */
-let addMode=false,pendingLL=null,addPinMarker=null;
-const hint=document.getElementById('hint');
+let addMode=false,pendingLL=null,addPinMarker=null,locPickerMode='add';
 const goldPinIcon=L.divIcon({className:'',html:'<div class="pin-dot"></div>',iconSize:[22,22],iconAnchor:[11,11]});
 const STATE_DEFAULT_ZONE={'Telangana':'5','Andhra Pradesh':'6','Karnataka':'7','Tamil Nadu':'8','Maharashtra':'8','Other':'6'};
 document.getElementById('fState').addEventListener('change',e=>{
@@ -709,39 +738,59 @@ function placeAddPin(ll){
   }
 }
 function removeAddPin(){ if(addPinMarker){ map.removeLayer(addPinMarker); addPinMarker=null; } }
+function detectGPS(onDone){
+  const isSecure = location.protocol==='https:' || location.hostname==='localhost';
+  if(!isSecure){
+    document.getElementById('locHelp').innerHTML='⚠️ Location detection only works on the live site (https://…), not when opening this file directly. Search an address below, or tap the map.';
+    if(onDone) onDone();
+    return;
+  }
+  if(!navigator.geolocation){
+    document.getElementById('locHelp').textContent='This browser has no location support — search an address below, or tap the map.';
+    if(onDone) onDone();
+    return;
+  }
+  document.getElementById('locHelp').textContent='Detecting your location…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const ll={lat:pos.coords.latitude,lng:pos.coords.longitude}; placeAddPin(ll); map.setView([ll.lat,ll.lng],16);
+      const acc=Math.round(pos.coords.accuracy);
+      const note = acc>80 ? ` — that's a rough fix; tap 🔄 Refresh after a few seconds outdoors, or drag/search to fine-tune.` : ` — drag the pin or search to fine-tune if needed.`;
+      document.getElementById('locHelp').textContent='📍 Accuracy ±'+acc+'m'+note;
+      if(onDone) onDone();
+    },
+    err=>{
+      placeAddPin(map.getCenter());
+      const reason = err.code===1 ? 'Location permission was denied — allow it in your browser/phone settings, or search/tap instead.'
+                   : err.code===2 ? 'Location unavailable right now — search an address below, or tap the map.'
+                   : 'Location timed out — search an address below, or tap the map.';
+      document.getElementById('locHelp').textContent=reason;
+      if(onDone) onDone();
+    },
+    {enableHighAccuracy:true,timeout:8000,maximumAge:0}
+  );
+}
 function openLocationPicker(startAt){
   document.getElementById('locSearch').value='';
   document.getElementById('locSuggest').classList.remove('show');
   document.getElementById('locPicker').classList.add('open');
-  const isSecure = location.protocol==='https:' || location.hostname==='localhost';
   if(startAt){
     placeAddPin(startAt); map.setView([startAt.lat,startAt.lng],16);
-  }else if(!isSecure){
-    document.getElementById('locHelp').innerHTML='⚠️ Location detection only works on the live site (https://…), not when opening this file directly. Search an address below, or tap the map.';
-    placeAddPin(map.getCenter());
-  }else if(navigator.geolocation){
-    document.getElementById('locHelp').textContent='Detecting your location…';
-    navigator.geolocation.getCurrentPosition(
-      pos=>{ const ll={lat:pos.coords.latitude,lng:pos.coords.longitude}; placeAddPin(ll); map.setView([ll.lat,ll.lng],16);
-        document.getElementById('locHelp').textContent='Drag the pin, tap the map, or search to set the exact spot'; },
-      err=>{
-        placeAddPin(map.getCenter());
-        const reason = err.code===1 ? 'Location permission was denied — allow it in your browser/phone settings, or search/tap instead.'
-                     : err.code===2 ? 'Location unavailable right now — search an address below, or tap the map.'
-                     : 'Location timed out — search an address below, or tap the map.';
-        document.getElementById('locHelp').textContent=reason;
-      },
-      {enableHighAccuracy:true,timeout:8000,maximumAge:30000}
-    );
+    document.getElementById('locHelp').textContent='Drag the pin, tap the map, or search to set the exact spot';
   }else{
-    document.getElementById('locHelp').textContent='This browser has no location support — search an address below, or tap the map.';
-    placeAddPin(map.getCenter());
+    detectGPS();
   }
 }
 map.on('click',e=>{ if(!document.getElementById('locPicker').classList.contains('open'))return; placeAddPin(e.latlng); });
 document.getElementById('addBtn').onclick=()=>{
   if(!session){ alert('Please sign in first.'); return; }
+  locPickerMode='add';
   openLocationPicker(null);
+};
+document.getElementById('locRefresh').onclick=()=>{
+  const btn=document.getElementById('locRefresh');
+  btn.disabled=true; btn.textContent='🔄 …';
+  detectGPS(()=>{ btn.disabled=false; btn.textContent='🔄 Refresh'; });
 };
 document.getElementById('locCancel').onclick=()=>{
   document.getElementById('locPicker').classList.remove('open'); removeAddPin();
@@ -749,12 +798,20 @@ document.getElementById('locCancel').onclick=()=>{
 document.getElementById('locConfirm').onclick=()=>{
   if(!pendingLL){ alert('Set a location first — drag the pin, tap the map, or search.'); return; }
   document.getElementById('locPicker').classList.remove('open');
-  resetAddForm();
-  document.getElementById('fLocStatus').textContent='📍 Location set';
-  document.getElementById('addSheet').classList.add('open');
+  if(locPickerMode==='edit'){
+    editNewLL={lat:pendingLL.lat,lng:pendingLL.lng};
+    removeAddPin();
+    document.getElementById('eLocStatus').textContent='New location set ✓ ('+editNewLL.lat.toFixed(5)+', '+editNewLL.lng.toFixed(5)+')';
+    document.getElementById('editSheet').classList.add('open');
+  }else{
+    resetAddForm();
+    document.getElementById('fLocStatus').textContent='📍 Location set';
+    document.getElementById('addSheet').classList.add('open');
+  }
 };
 document.getElementById('fMoveBtn').onclick=()=>{
   document.getElementById('addSheet').classList.remove('open');
+  locPickerMode='add';
   openLocationPicker(pendingLL); // keep adjusting from where it already was
 };
 document.getElementById('fCancel').onclick=()=>{ document.getElementById('addSheet').classList.remove('open'); removeAddPin(); };
@@ -798,23 +855,24 @@ document.getElementById('fSave').onclick=()=>{
     state:state,district:district,pincode:pin,
     ad:addrParts||('Added '+new Date().toLocaleDateString('en-IN')),
     lat:+pendingLL.lat.toFixed(5),lng:+pendingLL.lng.toFixed(5),
+    saleStatus:'prospect',
     ts:firebase.firestore.FieldValue.serverTimestamp()};
   db.collection(COL_RETAILERS).add(payload)
     .then(docRef=>{
       document.getElementById('addSheet').classList.remove('open');
       removeAddPin();
       // chain straight into check-in so remarks / a reminder can be added immediately
-      openCheckinWithStore({id:docRef.id,n:payload.n,a:payload.a,z:payload.z,live:true,lat:payload.lat,lng:payload.lng});
+      openCheckinWithStore({id:docRef.id,n:payload.n,a:payload.a,z:payload.z,live:true,lat:payload.lat,lng:payload.lng,saleStatus:'prospect'});
     })
     .catch(e=>alert('Could not save — '+e.message));
 };
 
 /* ---- edit / correct retailer details (admin only) ---- */
-let editStore=null, editMoveMode=false, editNewLL=null;
+let editStore=null, editNewLL=null;
 window.openEdit=function(id){
   if(!session){ alert('Please sign in first.'); return; }
   editStore=allStores().find(s=>s.id===id); if(!editStore) return;
-  editNewLL=null; editMoveMode=false;
+  editNewLL=null;
   document.getElementById('editOrigName').textContent=editStore.n+' · '+editStore.a;
   document.getElementById('eName').value=editStore.n||'';
   document.getElementById('eTel').value=editStore.c||'';
@@ -860,18 +918,10 @@ window.delAddedFromEdit=function(){
   }
 };
 document.getElementById('eMoveBtn').onclick=()=>{
-  editMoveMode=true;
   document.getElementById('editSheet').classList.remove('open');
-  hint.textContent='Tap the map where this store should actually be';
-  hint.style.display='block';
+  locPickerMode='edit';
+  openLocationPicker(null); // fresh GPS detect — assumes you're standing at the real store right now
 };
-map.on('click',e=>{
-  if(!editMoveMode) return;
-  editNewLL=e.latlng; editMoveMode=false; hint.style.display='none';
-  hint.textContent='Tap the map where the new store is located';
-  document.getElementById('eLocStatus').textContent='New location set ✓ ('+editNewLL.lat.toFixed(5)+', '+editNewLL.lng.toFixed(5)+')';
-  document.getElementById('editSheet').classList.add('open');
-});
 document.getElementById('eCancel').onclick=()=>document.getElementById('editSheet').classList.remove('open');
 document.getElementById('eSave').onclick=()=>{
   if(!editStore) return;
@@ -901,6 +951,11 @@ window.openCheckinWithStore=function(store){
   document.getElementById('ciStore').textContent=ciStore.n+' · '+ciStore.a;
   document.getElementById('ciRemarks').value='';
   document.getElementById('ciRemindDate').value='';
+  const isProspect = ciStore.live && ciStore.saleStatus!=='sold';
+  document.getElementById('ciOutcomeBox').style.display = isProspect ? '' : 'none';
+  document.getElementById('ciOutcome').value='';
+  document.getElementById('ciReason').value='';
+  document.getElementById('ciReasonBox').style.display='none';
   map.closePopup();
   document.getElementById('ciSheet').classList.add('open');
 };
@@ -908,19 +963,42 @@ window.openCheckin=function(id){
   const s=allStores().find(s=>s.id===id); if(!s)return;
   openCheckinWithStore(s);
 };
+document.getElementById('ciOutcome').addEventListener('change',e=>{
+  document.getElementById('ciReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
+});
 document.getElementById('ciCancel').onclick=()=>document.getElementById('ciSheet').classList.remove('open');
 document.getElementById('ciSave').onclick=()=>{
-  const doc={sid:ciStore.id,sn:ciStore.n,a:ciStore.a,z:ciStore.live?9:ciStore.z,by:session.name,
+  const isProspect = document.getElementById('ciOutcomeBox').style.display!=='none';
+  const outcome = document.getElementById('ciOutcome').value;
+  const reason = document.getElementById('ciReason').value;
+  if(isProspect){
+    if(!outcome){ alert('Please select whether they placed an order this visit.'); return; }
+    if(outcome==='not_sold' && !reason){ alert('Please select a reason.'); return; }
+  }
+  const zk=effectiveZone(ciStore);
+  const doc={sid:ciStore.id,sn:ciStore.n,a:ciStore.a,z:zk,by:session.name,
     r:document.getElementById('ciRemarks').value.trim(),
     ts:firebase.firestore.FieldValue.serverTimestamp()};
+  if(isProspect){ doc.outcome=outcome; if(outcome==='not_sold') doc.reason=reason; }
   const remindDate=document.getElementById('ciRemindDate').value; // "YYYY-MM-DD" or ""
-  const save=(pos)=>{ if(pos){doc.glat=+pos.coords.latitude.toFixed(5);doc.glng=+pos.coords.longitude.toFixed(5);}
+  const save=(pos)=>{
+    if(pos){
+      doc.glat=+pos.coords.latitude.toFixed(5); doc.glng=+pos.coords.longitude.toFixed(5);
+      if(ciStore.lat!=null && ciStore.lng!=null){
+        const dist=distMeters(doc.glat,doc.glng,ciStore.lat,ciStore.lng);
+        if(dist>=FAR_CHECKIN_METERS){ doc.farCheckin=true; doc.distanceM=Math.round(dist); }
+      }
+    }
     db.collection(COL_VISITS).add(doc)
       .then(()=>{
         document.getElementById('ciSheet').classList.remove('open');
+        if(isProspect && outcome==='sold'){
+          db.collection(COL_RETAILERS).doc(ciStore.id).update({saleStatus:'sold'})
+            .catch(e=>alert('Check-in saved, but could not update the store status — '+e.message));
+        }
         if(remindDate){
           db.collection(COL_REMINDERS).add({
-            sid:ciStore.id, sn:ciStore.n, a:ciStore.a, z:ciStore.live?9:ciStore.z,
+            sid:ciStore.id, sn:ciStore.n, a:ciStore.a, z:zk,
             foruid:session.uid, forname:session.name, note:doc.r,
             date:remindDate, done:false, ts:firebase.firestore.FieldValue.serverTimestamp()
           }).catch(e=>alert('Check-in saved, but the reminder could not be saved — '+e.message));
@@ -991,7 +1069,10 @@ function drawReport(){
     const stRows=Object.entries(g.stores).sort((x,y)=>y[1].n-x[1].n).map(([sid,st])=>{
       const log=st.log.sort((x,y)=>(y.ts?.toMillis?.()||0)-(x.ts?.toMillis?.()||0)).map(v=>{
         const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-        return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}</div></div>`;
+        const flagTag = v.farCheckin ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
+        const outcomeTag = v.outcome==='sold' ? ` · <span style="color:var(--ok);font-weight:600">✓ Sold</span>`
+                          : v.outcome==='not_sold' ? ` · <span style="color:var(--z1);font-weight:600">✗ ${v.reason||'Not sold'}</span>` : '';
+        return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}</div></div>`;
       }).join('');
       return `<div class="store-row ${qterm?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span class="vc">${st.n}×</span></div><div class="visit-log">${log}</div></div>`;
     }).join('');
