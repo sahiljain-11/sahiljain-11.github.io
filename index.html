@@ -259,7 +259,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v21.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v23.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -378,6 +378,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
       <span class="pill on" data-d="7">7 days</span>
       <span class="pill" data-d="30">30 days</span>
       <span class="pill" data-d="0" id="pillAll">All time</span>
+      <span class="pill" id="pillFlagged" style="border-color:var(--z1);color:var(--z1)">⚠️ Flagged only</span>
     </div>
     <div class="rp-filters" id="whoPills"></div>
   </header>
@@ -462,7 +463,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,att
 
 let db=null, auth=null, liveStores=[], visits=[], markers=[], disabled={};
 let zoneOn={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false,0:false,10:false,11:false,12:false}, query='';
-let vStats={}, rpDays=7, rpWho='', rpQuery='';
+let vStats={}, rpDays=7, rpWho='', rpQuery='', rpFlaggedOnly=false;
 let session=null; // {uid,name,role,email}
 
 document.getElementById('logoutBtn').onclick=()=>{ if(auth) auth.signOut(); location.reload(); };
@@ -1012,10 +1013,11 @@ document.getElementById('ciSave').onclick=()=>{
 /* ---- report ---- */
 document.getElementById('rpBtn').onclick=()=>{
   if(session.role!=='admin'&&session.role!=='manager') rpWho=session.name;
-  document.getElementById('rpSearch').value=''; rpQuery='';
+  document.getElementById('rpSearch').value=''; rpQuery=''; rpFlaggedOnly=false;
   document.getElementById('report').classList.add('open');drawReport();
 };
 document.getElementById('rpSearch').addEventListener('input',e=>{ rpQuery=e.target.value; drawReport(); });
+document.getElementById('pillFlagged').onclick=()=>{ rpFlaggedOnly=!rpFlaggedOnly; drawReport(); };
 document.getElementById('rpClose').onclick=()=>document.getElementById('report').classList.remove('open');
 document.getElementById('periodPills').addEventListener('click',e=>{
   if(!e.target.dataset.d)return;
@@ -1032,13 +1034,17 @@ function drawReport(){
     if(cutoff===0 || cutoff<oneYearAgo) cutoff=oneYearAgo; // sales can never see beyond 1 year
   }
   const qterm=rpQuery.trim().toLowerCase();
-  const inRange=visits.filter(v=>{
+  const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<cutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
     if(qterm && !(v.sn||'').toLowerCase().includes(qterm)) return false;
     return true;
   });
+  const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin).length : 0;
+  const inRange=(rpFlaggedOnly && canSeeAllReports) ? preFlagFilter.filter(v=>v.farCheckin) : preFlagFilter;
+  document.getElementById('pillFlagged').style.display = canSeeAllReports ? '' : 'none';
+  document.getElementById('pillFlagged').classList.toggle('on',rpFlaggedOnly && canSeeAllReports);
   if(canSeeAllReports){
     const who=[...new Set(visits.map(v=>v.by).filter(Boolean))].sort();
     document.getElementById('whoPills').innerHTML=['<span class="pill '+(rpWho===''?'on':'')+'" data-w="">Everyone</span>']
@@ -1063,21 +1069,22 @@ function drawReport(){
   const areas=Object.entries(byArea).sort((x,y)=>y[1].n-x[1].n);
   const activeStores=allStores().filter(s=>!disabled[s.id]).length;
   const visitedStores=new Set(inRange.map(v=>v.sid)).size;
-  let html=`<div class="rp-total"><b>${inRange.length}</b> check-ins · <b>${visitedStores}</b> of ${activeStores} active stores covered${rpWho?' · '+rpWho:''}</div>`;
+  const flagNote = flaggedCount>0 ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${flaggedCount} flagged (100m+)</span>` : '';
+  let html=`<div class="rp-total"><b>${inRange.length}</b> check-ins · <b>${visitedStores}</b> of ${activeStores} active stores covered${rpWho?' · '+rpWho:''}${flagNote}</div>`;
   if(!areas.length) html+='<div style="color:#8a8272;font-size:13px">No check-ins in this period yet. Open a store pin on the map and tap “Check in”.</div>';
   areas.forEach(([a,g])=>{
     const stRows=Object.entries(g.stores).sort((x,y)=>y[1].n-x[1].n).map(([sid,st])=>{
       const log=st.log.sort((x,y)=>(y.ts?.toMillis?.()||0)-(x.ts?.toMillis?.()||0)).map(v=>{
         const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-        const flagTag = v.farCheckin ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
+        const flagTag = (v.farCheckin && canSeeAllReports) ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
         const outcomeTag = v.outcome==='sold' ? ` · <span style="color:var(--ok);font-weight:600">✓ Sold</span>`
                           : v.outcome==='not_sold' ? ` · <span style="color:var(--z1);font-weight:600">✗ ${v.reason||'Not sold'}</span>` : '';
         return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}</div></div>`;
       }).join('');
-      return `<div class="store-row ${qterm?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span class="vc">${st.n}×</span></div><div class="visit-log">${log}</div></div>`;
+      return `<div class="store-row ${(qterm||rpFlaggedOnly)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span class="vc">${st.n}×</span></div><div class="visit-log">${log}</div></div>`;
     }).join('');
     const covered=Object.keys(g.stores).length, inArea=(storeTotals[a]||new Set()).size;
-    html+=`<div class="area-card ${qterm?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
+    html+=`<div class="area-card ${(qterm||rpFlaggedOnly)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
       <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="an">${a}<small>${covered} of ${inArea||'?'} active stores covered</small></div>
         <div class="ac"><b>${g.n}</b>visits</div></div>
