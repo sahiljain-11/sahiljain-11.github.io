@@ -58,6 +58,14 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 #suggest .sug .sn{display:block;font-family:'Cinzel',serif;font-size:13px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #suggest .sug .sa{display:block;color:var(--muted);font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #suggest .none{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic}
+#rmNewSuggest{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--cream-4);border-top:none;z-index:1500;max-height:220px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(28,23,18,.18)}
+#rmNewSuggest.show{display:block}
+#rmNewSuggest .sug{padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--cream-2)}
+#rmNewSuggest .sug:last-child{border-bottom:none}
+#rmNewSuggest .sug:hover{background:var(--cream-2)}
+#rmNewSuggest .sug .sn{display:block;font-family:'Cinzel',serif;font-size:13px;line-height:1.35}
+#rmNewSuggest .sug .sa{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+#rmNewSuggest .none{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic}
 .chip{border:1px solid;border-radius:2px;padding:8px 11px;font-size:10.5px;letter-spacing:.07em;cursor:pointer;user-select:none;background:transparent;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s;font-family:'Questrial';text-transform:uppercase;min-height:32px;box-sizing:border-box}
 .chip .dot{width:8px;height:8px;border-radius:50%}
 .chip.off{opacity:.28}
@@ -75,6 +83,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .chip.za{color:var(--gold);border-color:var(--gold)}.chip.za .dot{background:var(--gold-dim)}
 .chip.zoff{color:var(--off);border-color:var(--off)}.chip.zoff .dot{background:var(--off)}
 .btn{background:var(--ink);color:var(--cream);border:none;border-radius:2px;padding:10px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Questrial';min-height:36px}
+.back-arrow{background:transparent;border:1px solid var(--gold-dim);color:var(--ink);width:34px;height:34px;border-radius:50%;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.back-arrow:hover{background:var(--cream-2)}
 .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 #map{flex:1}
@@ -127,6 +137,27 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .sheet-btns .btn{flex:1;padding:12px}
 #report{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
 #reminders{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
+#tripsPanel{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
+#tripsPanel.open{display:flex}
+#tripsPanel header{padding:12px 16px}
+#tripsBody{flex:1;overflow-y:auto;padding:14px 16px 40px}
+#tripReportPanel{position:fixed;inset:0;background:var(--cream);z-index:1250;display:none;flex-direction:column}
+#tripReportPanel.open{display:flex}
+#tripReportPanel header{padding:12px 16px}
+#tripReportBody{flex:1;overflow-y:auto;padding:14px 16px 40px}
+#tripBadge{display:inline-block;background:var(--ok);color:#fff;font-family:'Bodoni Moda',serif;font-weight:600;font-size:10.5px;border-radius:9px;padding:0 6px;margin-left:6px;line-height:16px}
+.trip-card{background:#fff;border:1px solid var(--cream-3);border-left:3px solid var(--gold-dim);border-radius:2px;padding:13px 15px;margin-bottom:10px;cursor:pointer}
+.trip-card.active{border-left-color:var(--ok)}
+.trip-card .tc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.trip-card .tc-name{font-family:'Cinzel',serif;font-size:14.5px;font-weight:600}
+.trip-card .tc-live{display:inline-block;background:var(--ok);color:#fff;font-size:9px;letter-spacing:.12em;text-transform:uppercase;border-radius:9px;padding:2px 8px;margin-left:8px;vertical-align:2px}
+.trip-card .tc-dates{font-size:11px;color:var(--muted);margin:3px 0 8px}
+.trip-card .tc-stats{font-size:12.5px;color:var(--ink-2)}
+.trip-card .tc-stats b{font-family:'Bodoni Moda',serif;color:var(--ink)}
+.trip-card .tc-by{font-size:10.5px;color:var(--muted);margin-top:6px}
+.trip-card .tc-edit{font-size:10.5px;color:var(--gold);text-decoration:underline;margin-top:6px;display:inline-block}
+.trip-section-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.trip-section-title:first-child{margin-top:0}
 #reminders.open{display:flex}
 #reminders header{padding:12px 16px}
 #rmBody{flex:1;overflow-y:auto;padding:14px 16px 40px}
@@ -145,21 +176,39 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .rm-card .rm-btns button{font-family:'Questrial';font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--gold);background:transparent;color:var(--gold);border-radius:2px;padding:5px 10px;cursor:pointer}
 .rm-card .rm-btns button.done{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 .rm-empty{color:var(--muted);font-size:13px}
+.diff-row{padding:9px 12px;border-bottom:1px solid var(--cream-2);font-size:12px}
+.diff-row:last-child{border-bottom:none}
+.diff-row .dr-name{font-family:'Cinzel',serif;font-size:12.5px;font-weight:600;margin-bottom:3px}
+.diff-row .dr-field{color:var(--muted);display:block;margin-top:2px}
+.diff-row .dr-field b{color:var(--z1);font-family:inherit;font-weight:600}
+.diff-row .dr-field .arrow{color:var(--muted);margin:0 4px}
+.diff-row .dr-field .newval{color:var(--ok);font-weight:600}
 #report.open{display:flex}
 #report header{padding:12px 16px}
 .rp-filters{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
 .pill{border:1px solid var(--cream-4);color:var(--muted);border-radius:2px;padding:4px 11px;font-size:10.5px;letter-spacing:.08em;cursor:pointer;text-transform:uppercase;font-family:'Questrial'}
 .pill.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 #rpBody{flex:1;overflow-y:auto;padding:14px 16px 40px}
-.rp-total{font-size:12px;color:var(--muted);margin-bottom:12px;letter-spacing:.03em}
-.rp-total b{color:var(--ink);font-family:'Bodoni Moda',serif;font-size:14px}
-.area-card{background:#fff;border:1px solid var(--cream-3);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin-bottom:16px}
+.stat-box{background:#fff;border:1px solid var(--cream-3);border-top:2px solid var(--gold-dim);border-radius:2px;padding:11px 10px;text-align:center;transition:background .15s,border-color .15s}
+.stat-box.warn{border-top-color:var(--z1)}
+.stat-box.active{background:var(--cream-2);border:1px solid var(--gold-dim);border-top:2px solid var(--gold-dim)}
+.stat-box.active .sv{color:var(--gold)}
+.stat-box.active .sl{color:var(--ink)}
+.stat-box .sv{font-family:'Bodoni Moda',serif;font-size:21px;font-weight:600;color:var(--ink);line-height:1.1}
+.stat-box.warn .sv{color:var(--z1)}
+.stat-box .sl{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:4px;display:block}
+.rp-subline{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+.area-card{background:#fff;border:1px solid var(--cream-3);border-radius:2px;margin-bottom:10px;overflow:hidden;transition:box-shadow .15s}
+.area-card:hover{box-shadow:0 2px 10px rgba(28,23,18,.08)}
 .area-head{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;cursor:pointer}
 .area-head .an{font-family:'Cinzel',serif;font-weight:500;font-size:13px;letter-spacing:.03em}
 .area-head .an small{display:block;font-family:'Questrial';font-weight:400;font-size:10.5px;color:var(--muted);letter-spacing:.05em;margin-top:2px}
 .area-head .ac{text-align:right;font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 .area-head .ac b{font-size:19px;color:var(--ink);display:block;font-family:'Bodoni Moda',serif;font-weight:600}
 .zbar{height:2px}
+.area-progress{height:5px;background:var(--cream-2);margin:0 15px 10px;border-radius:3px;overflow:hidden}
+.area-progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .3s}
 .store-rows{display:none;border-top:1px solid var(--cream-2)}
 .area-card.open .store-rows{display:block}
 .store-row{padding:10px 15px;border-bottom:1px solid var(--cream-2);cursor:pointer}
@@ -169,6 +218,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .visit-log{display:none;margin-top:6px}
 .store-row.open .visit-log{display:block}
 .v-item{font-size:11.5px;color:var(--ink-2);padding:6px 9px;background:var(--cream-2);border-left:2px solid var(--gold-dim);border-radius:0 2px 2px 0;margin-top:4px}
+.v-order{font-size:11px;color:var(--ink);margin-top:4px;padding-top:4px;border-top:1px dashed var(--cream-4)}
+.v-order b{font-family:'Cinzel',serif;font-weight:600}
 .v-item .vm{color:var(--muted);font-size:10px;letter-spacing:.06em;margin-top:2px}
 #login{position:fixed;inset:0;background:var(--cream);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
 #login .box{max-width:340px;width:100%;text-align:center}
@@ -215,6 +266,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <button class="btn" id="addBtn">+ Add</button>
     <button class="btn ghost" id="rmBtn">Reminders<span id="rmBadge" style="display:none"></span></button>
     <button class="btn ghost" id="rpBtn">Report</button>
+    <button class="btn ghost" id="tripBtn">Trips<span id="tripBadge" style="display:none"></span></button>
+    <button class="btn ghost" id="excelBtn">Excel</button>
   </div>
   <div class="chip-strip">
     <span class="chip z1" data-z="1"><span class="dot"></span>Hyd Z1</span>
@@ -299,7 +352,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v26.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v38.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -318,6 +371,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   </select>
   <label>District / City</label><input id="fDistrict" placeholder="e.g. Hyderabad">
   <label>Area</label><input id="fArea" placeholder="e.g. Kompally">
+  <div id="fAreaStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
   <label>Pincode</label><input id="fPin" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
   <label>Coverage group (for map colour)</label>
   <select id="fZone">
@@ -452,10 +506,11 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <h3>Check in</h3>
   <div class="sub" id="ciStore"></div>
   <div id="ciOutcomeBox" style="display:none">
-    <label>Did they place an order this visit?</label>
+    <label>What happened this visit?</label>
     <select id="ciOutcome">
       <option value="">— Select —</option>
-      <option value="sold">Sold — placed an order</option>
+      <option value="stock_sold">Stock sold — from current stock</option>
+      <option value="order_taken">Order taken — custom / pre-order</option>
       <option value="not_sold">Not sold this visit</option>
     </select>
     <div id="ciReasonBox" style="display:none">
@@ -473,8 +528,26 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
         <option value="Other">Other (see remarks)</option>
       </select>
     </div>
+    <div id="ciPiecesBox" style="display:none">
+      <label>Number of pieces sold</label>
+      <input id="ciPieces" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 3">
+    </div>
+    <div id="ciOrderBox" style="display:none">
+      <label>Style name</label>
+      <input id="ciStyle" placeholder="e.g. Temple design necklace">
+      <label>Specifications</label>
+      <textarea id="ciSpecs" rows="2" placeholder="e.g. 22K gold, ~15g, size 6, ruby stones"></textarea>
+      <label>Expected delivery date</label>
+      <input id="ciDelivery" type="date">
+    </div>
   </div>
-  <label>Remarks (order taken, stock shown, follow-up…)</label>
+  <div id="ciTripBox" style="display:none">
+    <label>Part of a trip?</label>
+    <select id="ciTrip">
+      <option value="">Not part of a trip</option>
+    </select>
+  </div>
+  <label>Remarks (stock shown, follow-up…)</label>
   <textarea id="ciRemarks" rows="3" placeholder="e.g. Showed new solitaire line, order ₹— , revisit after 15 days"></textarea>
   <label>Remind me to revisit on (optional)</label>
   <input id="ciRemindDate" type="date">
@@ -484,19 +557,80 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   </div>
 </div>
 
+<div class="sheet" id="editVisitSheet">
+  <h3>Edit check-in</h3>
+  <div class="sub" id="evStore"></div>
+  <label>What happened this visit?</label>
+  <select id="evOutcome">
+    <option value="">— Select —</option>
+    <option value="stock_sold">Stock sold — from current stock</option>
+    <option value="order_taken">Order taken — custom / pre-order</option>
+    <option value="not_sold">Not sold this visit</option>
+  </select>
+  <div id="evReasonBox" style="display:none">
+    <label>Reason</label>
+    <select id="evReason">
+      <option value="">— Select a reason —</option>
+      <option value="Already has a regular supplier">Already has a regular supplier</option>
+      <option value="Price too high">Price too high</option>
+      <option value="Didn't like the designs shown">Didn't like the designs shown</option>
+      <option value="Budget / cash-flow constraints">Budget / cash-flow constraints</option>
+      <option value="Wants credit period we don't offer">Wants credit period we don't offer</option>
+      <option value="Owner/decision-maker not available">Owner/decision-maker not available</option>
+      <option value="Still comparing with other suppliers">Still comparing with other suppliers</option>
+      <option value="Not interested at this time">Not interested at this time</option>
+      <option value="Other">Other (see remarks)</option>
+    </select>
+  </div>
+  <div id="evPiecesBox" style="display:none">
+    <label>Number of pieces sold</label>
+    <input id="evPieces" type="number" inputmode="numeric" min="1" step="1">
+  </div>
+  <div id="evOrderBox" style="display:none">
+    <label>Style name</label>
+    <input id="evStyle">
+    <label>Specifications</label>
+    <textarea id="evSpecs" rows="2"></textarea>
+    <label>Expected delivery date</label>
+    <input id="evDelivery" type="date">
+  </div>
+  <label>Remarks</label>
+  <textarea id="evRemarks" rows="3"></textarea>
+  <div class="sub" style="margin-top:10px">Saving this shows "edited by you" to admins and managers, so the correction stays visible rather than silently overwriting the original.</div>
+  <div class="sheet-btns">
+    <button class="btn ghost" id="evCancel">Cancel</button>
+    <button class="btn" id="evSave">Save correction</button>
+  </div>
+</div>
+
 <div id="report">
   <header>
     <div class="brand-row">
-      <div class="panel-title">Visit Report<small>Area-wise coverage</small></div>
-      <button class="btn ghost" id="rpClose">Back to map</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="back-arrow" id="rpClose">←</button>
+        <div class="panel-title">Visit Report<small>Area-wise coverage</small></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn ghost" id="rpExportTop" style="display:none;padding:7px 10px;font-size:11px">⬇ Excel</button>
+        <button class="btn ghost" id="rpExportPdfTop" style="display:none;padding:7px 10px;font-size:11px">📄 PDF</button>
+      </div>
     </div>
     <input id="rpSearch" type="search" placeholder="Search a retailer to see their visit history…" style="width:100%;margin-top:9px;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+    <select id="rpZoneSelect" style="width:100%;margin-top:7px;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+      <option value="">All areas / districts</option>
+    </select>
     <div class="rp-filters" id="periodPills">
       <span class="pill" data-d="1">Today</span>
       <span class="pill on" data-d="7">7 days</span>
       <span class="pill" data-d="30">30 days</span>
       <span class="pill" data-d="0" id="pillAll">All time</span>
-      <span class="pill" id="pillFlagged" style="border-color:var(--z1);color:var(--z1)">⚠️ Flagged only</span>
+      <span class="pill" id="pillCustom">📅 Custom range</span>
+    </div>
+    <div id="customRangeBox" style="display:none;margin-top:8px">
+      <label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:4px">From</label>
+      <input id="rpFromDate" type="date" style="width:100%;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+      <label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);display:block;margin:8px 0 4px">To</label>
+      <input id="rpToDate" type="date" style="width:100%;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
     </div>
     <div class="rp-filters" id="whoPills"></div>
   </header>
@@ -506,17 +640,115 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 <div id="reminders">
   <header>
     <div class="brand-row">
-      <div class="panel-title">Reminders<small>Your revisit dates</small></div>
-      <button class="btn ghost" id="rmClose">Back to map</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="back-arrow" id="rmClose">←</button>
+        <div class="panel-title">Reminders<small>Your revisit dates</small></div>
+      </div>
+      <button class="btn" id="rmNewBtn" style="padding:7px 10px;font-size:11px">+ New</button>
     </div>
   </header>
   <div id="rmBody"></div>
+</div>
+
+<div class="sheet" id="tripSheet">
+  <h3 id="tripSheetTitle">Start a trip</h3>
+  <label>Trip type</label>
+  <select id="tripType">
+    <option value="Bengaluru Trip">Bengaluru Trip</option>
+    <option value="Andhra Trip">Andhra Trip</option>
+    <option value="Telangana Trip">Telangana Trip</option>
+    <option value="Rayalaseema Trip">Rayalaseema Trip</option>
+    <option value="Krishna-Guntur Trip">Krishna-Guntur Trip</option>
+    <option value="Godavari Trip">Godavari Trip</option>
+    <option value="Karnataka Trip">Karnataka Trip</option>
+    <option value="Tamil Nadu Trip">Tamil Nadu Trip</option>
+    <option value="__custom__">Other (type below)</option>
+  </select>
+  <input id="tripTypeCustom" placeholder="Trip name" style="display:none;margin-top:8px">
+  <label>Start date</label>
+  <input id="tripStart" type="date">
+  <label>End date (leave blank while still travelling)</label>
+  <input id="tripEnd" type="date">
+  <div class="sheet-btns">
+    <button class="btn ghost" id="tripCancel">Cancel</button>
+    <button class="btn" id="tripSave">Save trip</button>
+  </div>
+</div>
+
+<div class="sheet" id="newReminderSheet">
+  <h3>New reminder</h3>
+  <label>Store</label>
+  <div style="position:relative">
+    <input id="rmNewStoreSearch" placeholder="Search store or area…" autocomplete="off">
+    <div id="rmNewSuggest"></div>
+  </div>
+  <div id="rmNewStoreChosen" style="display:none;font-size:12.5px;color:var(--ok);margin-top:6px"></div>
+  <label>Remind me on</label>
+  <input id="rmNewDate" type="date">
+  <label>Note (optional)</label>
+  <textarea id="rmNewNote" rows="2" placeholder="e.g. Follow up on the bridal set order"></textarea>
+  <div class="sheet-btns">
+    <button class="btn ghost" id="rmNewCancel">Cancel</button>
+    <button class="btn" id="rmNewSave">Save reminder</button>
+  </div>
+</div>
+
+<div class="sheet" id="excelSheet">
+  <h3>Retailer data — Excel</h3>
+  <div class="sub">Basic details only: name, mobile, state, district, area, pincode, address.</div>
+  <button class="btn" id="excelExportBtn" style="width:100%;margin-top:10px">⬇ Download all retailers (.xlsx)</button>
+  <div id="excelImportZone" style="display:none">
+    <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--cream-4)">
+      <div class="admin-label" style="color:var(--gold)">Bulk update</div>
+      <div class="sub" style="margin-bottom:8px">Edit the downloaded file, then upload it here. Only existing retailers are updated — this can't add new ones or change their map location.</div>
+      <input type="file" id="excelUploadInput" accept=".xlsx,.xls">
+      <div id="excelPreviewBox" style="display:none;margin-top:12px">
+        <div id="excelPreviewSummary" style="font-size:12.5px;color:var(--muted);margin-bottom:8px"></div>
+        <div id="excelPreviewList" style="max-height:240px;overflow-y:auto;border:1px solid var(--cream-3);border-radius:2px"></div>
+        <button class="btn" id="excelApplyBtn" style="width:100%;margin-top:10px">Apply these changes</button>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-btns" style="margin-top:16px">
+    <button class="btn ghost" id="excelCancel">Close</button>
+  </div>
+</div>
+
+<div id="tripsPanel">
+  <header>
+    <div class="brand-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="back-arrow" id="tripsClose">←</button>
+        <div class="panel-title">Trips<small>Active &amp; past coverage runs</small></div>
+      </div>
+    </div>
+  </header>
+  <div id="tripsBody"></div>
+</div>
+
+<div id="tripReportPanel">
+  <header>
+    <div class="brand-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="back-arrow" id="tripReportClose">←</button>
+        <div class="panel-title" id="tripReportTitle">Trip</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn ghost" id="tripReportExport" style="display:none;padding:7px 10px;font-size:11px">⬇ Excel</button>
+        <button class="btn ghost" id="tripReportExportPdf" style="display:none;padding:7px 10px;font-size:11px">📄 PDF</button>
+      </div>
+    </div>
+  </header>
+  <div id="tripReportBody"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 /* ============================================================
    STEP 1 — PASTE YOUR FIREBASE CONFIG (same as COD app)
@@ -536,6 +768,7 @@ const COL_PROFILES  = "map_profiles";
 const COL_REMINDERS = "map_reminders";
 const COL_OVERRIDES = "map_overrides";
 const COL_ZONES = "map_zones";
+const COL_TRIPS = "map_trips";
 const USERNAME_DOMAIN = "bharnigems.local";  // internal only — your team never sees this
 /* ============================================================
    STEP 3 — CREATE YOUR TEAM'S LOGIN ACCOUNTS (username-based)
@@ -583,8 +816,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,att
 
 let db=null, auth=null, liveStores=[], visits=[], markers=[], disabled={};
 let zoneOn={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false,0:false,10:false,11:false,12:false}, query='';
-let vStats={}, rpDays=7, rpWho='', rpQuery='', rpFlaggedOnly=false;
+let vStats={}, rpDays=7, rpWho='', rpQuery='', rpSubFilter='', rpZoneFilter='', rpCustomRange=false;
+let trips=[], editingTripId=null, currentTripReportId=null;
 let session=null; // {uid,name,role,email}
+function closeAllOverlays(){
+  ['addSheet','editSheet','ciSheet','tripSheet','excelSheet','editVisitSheet','newReminderSheet','locPicker'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('open');
+  });
+  ['reminders','tripsPanel','tripReportPanel','report'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('open');
+  });
+}
 
 document.getElementById('logoutBtn').onclick=()=>{ if(auth) auth.signOut(); location.reload(); };
 
@@ -674,8 +916,61 @@ window.checkinFromReminder=function(sid){
   document.getElementById('reminders').classList.remove('open');
   openCheckin(sid);
 };
-document.getElementById('rmBtn').onclick=()=>{document.getElementById('reminders').classList.add('open');drawReminders();};
+document.getElementById('rmBtn').onclick=()=>{closeAllOverlays();document.getElementById('reminders').classList.add('open');drawReminders();};
 document.getElementById('rmClose').onclick=()=>document.getElementById('reminders').classList.remove('open');
+
+/* ---- create a reminder directly from the Reminders tab ---- */
+let rmNewChosenStore=null;
+document.getElementById('rmNewBtn').onclick=()=>{
+  if(!session){ alert('Please sign in first.'); return; }
+  rmNewChosenStore=null;
+  document.getElementById('rmNewStoreSearch').value=''; document.getElementById('rmNewStoreSearch').style.display='';
+  document.getElementById('rmNewSuggest').classList.remove('show');
+  document.getElementById('rmNewStoreChosen').style.display='none';
+  document.getElementById('rmNewDate').value='';
+  document.getElementById('rmNewNote').value='';
+  closeAllOverlays();
+  document.getElementById('newReminderSheet').classList.add('open');
+};
+document.getElementById('rmNewStoreSearch').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  const box=document.getElementById('rmNewSuggest');
+  if(q.length<2){ box.classList.remove('show'); return; }
+  const matches=allStores().filter(s=>!disabled[s.id] && storeSearchText(s).includes(q)).slice(0,10);
+  box.innerHTML = matches.length
+    ? matches.map(s=>`<div class="sug" data-id="${s.id}"><span class="sn">${s.n}</span><span class="sa">${s.a}</span></div>`).join('')
+    : '<div class="none">No matching retailer</div>';
+  box.classList.add('show');
+  box.querySelectorAll('.sug').forEach(el=>{
+    el.onclick=()=>{
+      const s=allStores().find(x=>x.id===el.dataset.id); if(!s) return;
+      rmNewChosenStore=s;
+      document.getElementById('rmNewStoreSearch').style.display='none';
+      document.getElementById('rmNewStoreChosen').style.display='';
+      document.getElementById('rmNewStoreChosen').textContent='📍 '+s.n+' · '+s.a+'  (change)';
+      document.getElementById('rmNewStoreChosen').onclick=()=>{
+        rmNewChosenStore=null;
+        document.getElementById('rmNewStoreChosen').style.display='none';
+        document.getElementById('rmNewStoreSearch').style.display=''; document.getElementById('rmNewStoreSearch').value=''; document.getElementById('rmNewStoreSearch').focus();
+      };
+      box.classList.remove('show');
+    };
+  });
+});
+document.getElementById('rmNewCancel').onclick=()=>document.getElementById('newReminderSheet').classList.remove('open');
+document.getElementById('rmNewSave').onclick=()=>{
+  if(!rmNewChosenStore){ alert('Please search for and pick a store first.'); return; }
+  const date=document.getElementById('rmNewDate').value;
+  if(!date){ alert('Please pick a date.'); return; }
+  db.collection(COL_REMINDERS).add({
+    sid:rmNewChosenStore.id, sn:rmNewChosenStore.n, a:rmNewChosenStore.a, z:effectiveZone(rmNewChosenStore),
+    foruid:session.uid, forname:session.name, note:document.getElementById('rmNewNote').value.trim(),
+    date:date, done:false, ts:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    document.getElementById('newReminderSheet').classList.remove('open');
+    document.getElementById('reminders').classList.add('open'); drawReminders();
+  }).catch(e=>alert('Could not save — '+e.message));
+};
 
 function buildStats(){
   vStats={};
@@ -687,6 +982,20 @@ function buildStats(){
   });
 }
 function fmtD(ms){ return ms?new Date(ms).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):''; }
+function outcomeMeta(v){
+  if(v.outcome==='stock_sold' || v.outcome==='sold'){ // 'sold' kept for backward-compat with visits recorded before this split
+    return {tag:`<span style="color:var(--ok);font-weight:600">✓ Stock sold${v.pieces?' · '+v.pieces+' pcs':''}</span>`, extra:''};
+  }
+  if(v.outcome==='order_taken'){
+    const due=v.deliveryDate?fmtD(new Date(v.deliveryDate+'T00:00:00').getTime()):'—';
+    const extra=`<div class="v-order">📝 <b>${v.style||'—'}</b>${v.specs?' · '+v.specs:''} · due ${due}</div>`;
+    return {tag:`<span style="color:var(--gold);font-weight:600">📝 Order taken</span>`, extra};
+  }
+  if(v.outcome==='not_sold'){
+    return {tag:`<span style="color:var(--z1);font-weight:600">✗ ${v.reason||'Not sold'}</span>`, extra:''};
+  }
+  return {tag:'', extra:''};
+}
 function popupHtml(s, added){
   const isOff = !!disabled[s.id];
   const st=vStats[s.id];
@@ -719,6 +1028,16 @@ function distMeters(lat1,lng1,lat2,lng2){
   const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(a));
 }
+const AREA_SNAP_METERS = 6000; // only borrow a nearby area's name within ~6km — never reach across genuinely empty territory
+function nearestAreaSuggestion(lat,lng){
+  let best=null, bestDist=Infinity;
+  allStores().forEach(s=>{
+    if(disabled[s.id] || !s.a || s.lat==null || s.lng==null) return;
+    const d=distMeters(lat,lng,s.lat,s.lng);
+    if(d<bestDist){ bestDist=d; best=s.a; }
+  });
+  return (best && bestDist<=AREA_SNAP_METERS) ? {name:best, km:(bestDist/1000).toFixed(1)} : null;
+}
 function effectiveZone(s){ return s.z; } // prospects now merge into their real area; sale status only affects marker style, not filtering
 function isProspect(s){ return !!(s.live && s.saleStatus!=='sold'); }
 function computeTodayCheckins(){
@@ -727,18 +1046,36 @@ function computeTodayCheckins(){
   return visits.filter(v=>v.by===session.name && v.ts && v.ts.toMillis && new Date(v.ts.toMillis()).toISOString().slice(0,10)===day).length;
 }
 const prospectIcon=L.divIcon({className:'',html:'<div class="prospect-badge"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+const NEIGHBOR_RADIUS_METERS = 8000; // selecting a store reveals others within ~8km, midpoint of the 5-10km range requested
+let selectedStoreId=null;
+let isRendering=false;
+function storeSearchText(s){
+  const zk=effectiveZone(s);
+  let cityHint='';
+  if(zk>=1&&zk<=4) cityHint='hyderabad secunderabad';
+  else if(zk===10||zk===11) cityHint='bengaluru bangalore';
+  else if(zk===12) cityHint='bengaluru bangalore kolar';
+  return (s.n+' '+s.a+' '+(s.ad||'')+' '+(s.state||s.st||'')+' '+(s.district||'')+' '+cityHint+' '+zName(zk)).toLowerCase();
+}
 function render(){
+  isRendering=true;
   markers.forEach(m=>map.removeLayer(m)); markers=[];
   const q=query.trim().toLowerCase(); let shown=0;
-  allStores().forEach(s=>{
+  const allS=allStores();
+  const selectedStore = selectedStoreId ? allS.find(s=>s.id===selectedStoreId) : null;
+  allS.forEach(s=>{
     const isOff=!!disabled[s.id];
     const zk=effectiveZone(s);
+    let passes;
     if(q){
-      if(!(s.n+' '+s.a).toLowerCase().includes(q)) return; // search shows matches regardless of zone chips
+      passes = storeSearchText(s).includes(q); // search shows matches regardless of zone chips
     }else{
-      const passZone = isOff ? zoneOn[0] : zoneOn[zk];
-      if(!passZone) return; // nothing shown until a zone is selected
+      passes = isOff ? zoneOn[0] : zoneOn[zk];
     }
+    if(!passes && selectedStore && !isOff && s.lat!=null && s.lng!=null){
+      if(distMeters(s.lat,s.lng,selectedStore.lat,selectedStore.lng)<=NEIGHBOR_RADIUS_METERS) passes=true;
+    }
+    if(!passes) return;
     const visited=vStats[s.id]&&vStats[s.id].last>Date.now()-30*864e5;
     let m;
     if(!isOff && isProspect(s)){
@@ -753,12 +1090,21 @@ function render(){
         dashArray:isOff?'2,3':null
       }).bindPopup(()=>popupHtml(s,!!s.live));
     }
+    m.on('popupopen',()=>{ if(selectedStoreId!==s.id){ selectedStoreId=s.id; setTimeout(render,0); } });
+    m.on('popupclose',()=>{ if(selectedStoreId===s.id && !isRendering){ selectedStoreId=null; render(); } });
     m._s=s; m.addTo(map); markers.push(m); shown++;
   });
+  if(selectedStoreId){
+    const reopen=markers.find(mk=>mk._s && mk._s.id===selectedStoreId);
+    if(reopen) reopen.openPopup();
+  }
+  isRendering=false;
   const todayCount=computeTodayCheckins();
   let contextLine='';
   if(q){
     contextLine=`<b>${shown}</b> stores matching "${query.trim()}"`;
+  }else if(selectedStore){
+    contextLine=`<b>${shown}</b> stores shown — including others within 8km of ${selectedStore.n}`;
   }else{
     const activeKeys=Object.keys(zoneOn).filter(k=>zoneOn[k] && k!=='0' && k!=='9');
     if(activeKeys.length===1){ contextLine=`<b>${shown}</b> stores in ${zName(activeKeys[0]).split(' · ')[0]}`; }
@@ -804,7 +1150,245 @@ function refreshZoneDropdowns(){
     });
     if([...sel.options].some(o=>o.value===current)) sel.value=current;
   });
+  populateReportZoneFilter();
 }
+function populateReportZoneFilter(){
+  const sel=document.getElementById('rpZoneSelect');
+  const current=sel.value;
+  const entries=Object.keys(ZN).map(k=>[k,ZN[k]]).concat(Object.keys(customZones).map(id=>[id,customZones[id].name]));
+  entries.sort((a,b)=>a[1].localeCompare(b[1]));
+  sel.innerHTML='<option value="">All areas / districts</option>'+
+    entries.map(([code,name])=>`<option value="${code}">${name}</option>`).join('');
+  if([...sel.options].some(o=>o.value===current)) sel.value=current;
+}
+function populateCheckinTripSelect(){
+  const sel=document.getElementById('ciTrip');
+  const current=sel.value;
+  const active=activeTrips();
+  sel.innerHTML='<option value="">Not part of a trip</option>'+
+    active.map(t=>`<option value="${t.id}">${tripLabel(t)}</option>`).join('');
+  document.getElementById('ciTripBox').style.display = active.length ? '' : 'none';
+  if([...sel.options].some(o=>o.value===current)) sel.value=current;
+}
+function activeTrips(){ return trips.filter(t=>!t.endDate); }
+function tripLabel(t){ return t.type + ' — ' + fmtD(new Date(t.startDate+'T00:00:00').getTime()) + (t.by?' ('+t.by+')':''); }
+document.getElementById('tripType').addEventListener('change',e=>{
+  document.getElementById('tripTypeCustom').style.display = e.target.value==='__custom__' ? '' : 'none';
+});
+document.getElementById('tripBtn').onclick=()=>{ closeAllOverlays(); document.getElementById('tripsPanel').classList.add('open'); drawTrips(); };
+document.getElementById('tripsClose').onclick=()=>document.getElementById('tripsPanel').classList.remove('open');
+document.getElementById('tripReportClose').onclick=()=>document.getElementById('tripReportPanel').classList.remove('open');
+document.getElementById('tripReportExport').onclick=()=>exportTripVisits();
+document.getElementById('tripReportExportPdf').onclick=()=>exportTripVisitsPdf();
+window.openNewTrip=function(){
+  if(!session){ alert('Please sign in first.'); return; }
+  editingTripId=null;
+  document.getElementById('tripSheetTitle').textContent='Start a trip';
+  document.getElementById('tripType').value='Bengaluru Trip';
+  document.getElementById('tripTypeCustom').value=''; document.getElementById('tripTypeCustom').style.display='none';
+  document.getElementById('tripStart').value=todayStr();
+  document.getElementById('tripEnd').value='';
+  document.getElementById('tripsPanel').classList.remove('open'); // sheet sits below the panel's z-index, so hide it first
+  document.getElementById('tripSheet').classList.add('open');
+};
+window.openEditTrip=function(id){
+  if(!session){ alert('Please sign in first.'); return; }
+  const t=trips.find(x=>x.id===id); if(!t) return;
+  editingTripId=id;
+  document.getElementById('tripSheetTitle').textContent='Edit trip';
+  const known=[...document.getElementById('tripType').options].some(o=>o.value===t.type);
+  document.getElementById('tripType').value = known ? t.type : '__custom__';
+  document.getElementById('tripTypeCustom').style.display = known ? 'none' : '';
+  document.getElementById('tripTypeCustom').value = known ? '' : t.type;
+  document.getElementById('tripStart').value=t.startDate||'';
+  document.getElementById('tripEnd').value=t.endDate||'';
+  document.getElementById('tripsPanel').classList.remove('open');
+  document.getElementById('tripSheet').classList.add('open');
+};
+document.getElementById('tripCancel').onclick=()=>{
+  document.getElementById('tripSheet').classList.remove('open');
+  document.getElementById('tripsPanel').classList.add('open'); drawTrips(); // return to the list, not the bare map
+};
+document.getElementById('tripSave').onclick=()=>{
+  const typeSel=document.getElementById('tripType').value;
+  const type = typeSel==='__custom__' ? document.getElementById('tripTypeCustom').value.trim() : typeSel;
+  const startDate=document.getElementById('tripStart').value;
+  const endDate=document.getElementById('tripEnd').value;
+  if(!type) return document.getElementById('tripTypeCustom').focus();
+  if(!startDate){ alert('Please pick a start date.'); return; }
+  const payload={type,startDate,endDate:endDate||null,by:session.name,ts:firebase.firestore.FieldValue.serverTimestamp()};
+  const task = editingTripId
+    ? db.collection(COL_TRIPS).doc(editingTripId).update(payload)
+    : db.collection(COL_TRIPS).add(payload);
+  task.then(()=>{
+    document.getElementById('tripSheet').classList.remove('open');
+    document.getElementById('tripsPanel').classList.add('open'); drawTrips(); // land back on the list showing the change
+  }).catch(e=>alert('Could not save trip — '+e.message));
+};
+function tripStats(tripId){
+  const tv=visits.filter(v=>v.tripId===tripId);
+  const stores=new Set(tv.map(v=>v.sid)).size;
+  const pieces=tv.reduce((s,v)=>s+(v.pieces||0),0);
+  return {checkins:tv.length, stores, pieces};
+}
+function updateTripBadge(){
+  const n=activeTrips().length;
+  const b=document.getElementById('tripBadge');
+  if(n>0){ b.textContent=n; b.style.display='inline-block'; } else b.style.display='none';
+}
+function drawTrips(){
+  const active=activeTrips().sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  const past=trips.filter(t=>t.endDate).sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  const card=(t,isActive)=>{
+    const st=tripStats(t.id);
+    return `<div class="trip-card ${isActive?'active':''}" onclick="openTripReport('${t.id}')">
+      <div class="tc-top"><span class="tc-name">${t.type}${isActive?'<span class="tc-live">Live</span>':''}</span></div>
+      <div class="tc-dates">${fmtD(new Date(t.startDate+'T00:00:00').getTime())}${t.endDate?' – '+fmtD(new Date(t.endDate+'T00:00:00').getTime()):' – ongoing'}</div>
+      <div class="tc-stats"><b>${st.checkins}</b> check-ins · <b>${st.stores}</b> stores · <b>${st.pieces}</b> pieces sold</div>
+      <div class="tc-by">started by ${t.by||'—'}</div>
+      <span class="tc-edit" onclick="event.stopPropagation();openEditTrip('${t.id}')">edit trip details</span>
+    </div>`;
+  };
+  let html = `<button class="btn" style="width:100%;margin-bottom:16px" onclick="openNewTrip()">+ Start a new trip</button>`;
+  html += `<div class="trip-section-title">Active (${active.length})</div>`;
+  html += active.length ? active.map(t=>card(t,true)).join('') : '<div class="rm-empty">No trip currently active.</div>';
+  html += `<div class="trip-section-title">Past trips (${past.length})</div>`;
+  html += past.length ? past.map(t=>card(t,false)).join('') : '<div class="rm-empty">No past trips yet.</div>';
+  document.getElementById('tripsBody').innerHTML=html;
+}
+window.openTripReport=function(id){
+  const t=trips.find(x=>x.id===id); if(!t) return;
+  currentTripReportId=id;
+  document.getElementById('tripReportTitle').textContent=tripLabel(t);
+  document.getElementById('tripReportExport').style.display = (session && (session.role==='admin'||session.role==='manager')) ? '' : 'none';
+  document.getElementById('tripReportExportPdf').style.display = (session && (session.role==='admin'||session.role==='manager')) ? '' : 'none';
+  const tv=visits.filter(v=>v.tripId===id).sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0));
+  const byArea={};
+  tv.forEach(v=>{
+    const g=byArea[v.a]||(byArea[v.a]={n:0,pieces:0,stores:new Set(),z:v.z,log:[]});
+    g.n++; g.pieces+=(v.pieces||0); g.stores.add(v.sid); g.log.push(v);
+  });
+  const totalPieces=tv.reduce((s,v)=>s+(v.pieces||0),0);
+  const totalStores=new Set(tv.map(v=>v.sid)).size;
+  const soldCount=tv.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken').length;
+  let html='<div class="stat-row">'
+    + `<div class="stat-box"><span class="sv">${tv.length}</span><span class="sl">Check-ins</span></div>`
+    + `<div class="stat-box"><span class="sv">${totalStores}</span><span class="sl">Stores covered</span></div>`
+    + `<div class="stat-box"><span class="sv">${soldCount}</span><span class="sl">Orders placed</span></div>`
+    + `<div class="stat-box"><span class="sv">${totalPieces}</span><span class="sl">Pieces sold</span></div>`
+    + '</div>';
+  if(!tv.length) html+='<div class="rm-empty">No check-ins logged against this trip yet.</div>';
+  Object.entries(byArea).sort((a,b)=>b[1].n-a[1].n).forEach(([a,g])=>{
+    const rows=g.log.map(v=>{
+      const t2=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
+      const om=outcomeMeta(v);
+      return `<div class="v-item">${v.sn} — ${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t2)} · ${v.by||'—'}${om.tag?' · '+om.tag:''}</div></div>`;
+    }).join('');
+    const areaTotal = allStores().filter(s=>!disabled[s.id] && s.a===a).length;
+    const covPct = areaTotal>0 ? Math.round(100*g.stores.size/areaTotal) : 0;
+    html+=`<div class="area-card open"><div class="zbar" style="background:${zColor(g.z)}"></div>
+      <div class="area-head"><div class="an">${a}<small>${g.stores.size} of ${areaTotal||'?'} stores covered · ${g.pieces} pcs</small></div><div class="ac"><b>${g.n}</b>visits</div></div>
+      <div class="area-progress"><div class="area-progress-fill" style="width:${covPct}%"></div></div>
+      <div class="store-rows" style="display:block">${rows}</div></div>`;
+  });
+  document.getElementById('tripReportBody').innerHTML=html;
+  document.getElementById('tripReportPanel').classList.add('open');
+};
+
+/* ---- Excel export / bulk update ---- */
+document.getElementById('excelBtn').onclick=()=>{
+  closeAllOverlays();
+  document.getElementById('excelImportZone').style.display = (session && session.role==='admin') ? '' : 'none';
+  document.getElementById('excelUploadInput').value='';
+  document.getElementById('excelPreviewBox').style.display='none';
+  pendingImportChanges=[];
+  document.getElementById('excelSheet').classList.add('open');
+};
+document.getElementById('excelCancel').onclick=()=>document.getElementById('excelSheet').classList.remove('open');
+document.getElementById('excelExportBtn').onclick=()=>{
+  const rows=allStores().map(s=>({
+    'Store ID': s.id,
+    'Name': s.n||'',
+    'Mobile': s.c||'',
+    'State': s.state||s.st||'',
+    'District': s.district||'',
+    'Area': s.a||'',
+    'Pincode': s.pincode||'',
+    'Address': s.ad||'',
+    'Status': disabled[s.id] ? 'Disabled' : 'Active'
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:24},{wch:30},{wch:14},{wch:16},{wch:18},{wch:20},{wch:10},{wch:34},{wch:10}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Retailers');
+  XLSX.writeFile(wb,'bharni_retailers_'+todayStr()+'.xlsx');
+};
+let pendingImportChanges=[];
+const EXCEL_FIELD_MAP=[['Name','n'],['Mobile','c'],['State','state'],['District','district'],['Area','a'],['Pincode','pincode'],['Address','ad']];
+document.getElementById('excelUploadInput').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    let rows;
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+      rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    }catch(err){ alert('Could not read that file — is it the same .xlsx you downloaded?'); return; }
+    computeImportDiff(rows);
+  };
+  reader.readAsArrayBuffer(file);
+});
+function computeImportDiff(rows){
+  const byId={}; allStores().forEach(s=>byId[s.id]=s);
+  pendingImportChanges=[];
+  let unmatched=0;
+  rows.forEach(row=>{
+    const id=String(row['Store ID']||'').trim();
+    const s=byId[id];
+    if(!s){ if(id) unmatched++; return; }
+    const fieldDiffs=[];
+    const patch={};
+    EXCEL_FIELD_MAP.forEach(([col,key])=>{
+      const oldVal = key==='state' ? String(s.state||s.st||'') : String(s[key]||'');
+      const newVal = String(row[col]||'').trim();
+      if(newVal!==oldVal.trim()){ fieldDiffs.push({label:col,oldVal:oldVal||'(blank)',newVal:newVal||'(blank)'}); patch[key]=newVal; }
+    });
+    if(fieldDiffs.length){ pendingImportChanges.push({id,live:!!s.live,name:s.n,fieldDiffs,patch}); }
+  });
+  renderImportPreview(unmatched);
+}
+function renderImportPreview(unmatched){
+  const box=document.getElementById('excelPreviewList');
+  const summary=document.getElementById('excelPreviewSummary');
+  if(!pendingImportChanges.length){
+    summary.textContent = unmatched ? `No recognized changes. ${unmatched} row(s) had an unmatched Store ID.` : 'No changes found — the file matches what\'s already saved.';
+    box.innerHTML='';
+    document.getElementById('excelPreviewBox').style.display='';
+    return;
+  }
+  summary.innerHTML = `<b style="font-family:'Bodoni Moda',serif;color:var(--ink)">${pendingImportChanges.length}</b> retailer(s) will be updated` + (unmatched?` · ${unmatched} row(s) skipped (unmatched ID)`:'');
+  box.innerHTML=pendingImportChanges.map(c=>`<div class="diff-row"><div class="dr-name">${c.name}</div>`+
+    c.fieldDiffs.map(f=>`<span class="dr-field"><b>${f.label}:</b> ${f.oldVal}<span class="arrow">→</span><span class="newval">${f.newVal}</span></span>`).join('')+
+    `</div>`).join('');
+  document.getElementById('excelPreviewBox').style.display='';
+}
+document.getElementById('excelApplyBtn').onclick=()=>{
+  if(!session||session.role!=='admin'){ alert('Only admins can apply bulk updates.'); return; }
+  if(!pendingImportChanges.length) return;
+  if(!confirm('Apply changes to '+pendingImportChanges.length+' retailer(s)? This updates the live map for everyone.')) return;
+  const chunks=[]; for(let i=0;i<pendingImportChanges.length;i+=400) chunks.push(pendingImportChanges.slice(i,i+400));
+  const runChunk=(idx)=>{
+    if(idx>=chunks.length){ alert('Bulk update applied.'); document.getElementById('excelSheet').classList.remove('open'); return; }
+    const batch=db.batch();
+    chunks[idx].forEach(c=>{
+      const ref = c.live ? db.collection(COL_RETAILERS).doc(c.id) : db.collection(COL_OVERRIDES).doc(c.id);
+      if(c.live) batch.update(ref,c.patch); else batch.set(ref,c.patch,{merge:true});
+    });
+    batch.commit().then(()=>runChunk(idx+1)).catch(e=>alert('Could not apply some changes — '+e.message));
+  };
+  runChunk(0);
+};
+
 document.getElementById('newZoneBtn').onclick=()=>{
   document.getElementById('zName').value=''; document.getElementById('zColorPick').value='#7A5230';
   document.getElementById('zoneSheet').classList.add('open');
@@ -828,7 +1412,7 @@ document.addEventListener('click',e=>{
 function showSuggestions(q){
   q=q.trim().toLowerCase();
   if(!q){ suggestBox.classList.remove('show'); suggestBox.innerHTML=''; return; }
-  const matches=allStores().filter(s=>!disabled[s.id] && (s.n+' '+s.a).toLowerCase().includes(q)).slice(0,12);
+  const matches=allStores().filter(s=>!disabled[s.id] && storeSearchText(s).includes(q)).slice(0,12);
   if(!matches.length){
     suggestBox.innerHTML='<div class="none">No matching retailer</div>';
   }else{
@@ -860,7 +1444,7 @@ document.getElementById('fDistrict').addEventListener('blur',e=>{
 function resetAddForm(){
   ['fName','fTel','fDistrict','fArea','fPin'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('fState').value='Telangana';
-  document.getElementById('fZone').value='5';
+  document.getElementById('fAreaStatus').textContent='';
 }
 function placeAddPin(ll){
   pendingLL=ll;
@@ -917,6 +1501,7 @@ function openLocationPicker(startAt){
 map.on('click',e=>{ if(!document.getElementById('locPicker').classList.contains('open'))return; placeAddPin(e.latlng); });
 document.getElementById('addBtn').onclick=()=>{
   if(!session){ alert('Please sign in first.'); return; }
+  closeAllOverlays();
   locPickerMode='add';
   openLocationPicker(null);
 };
@@ -927,6 +1512,7 @@ document.getElementById('locRefresh').onclick=()=>{
 };
 document.getElementById('locCancel').onclick=()=>{
   document.getElementById('locPicker').classList.remove('open'); removeAddPin();
+  if(locPickerMode==='edit' && editStore){ document.getElementById('editSheet').classList.add('open'); } // canceling a reposition returns to the edit form, not a bare map
 };
 document.getElementById('locConfirm').onclick=()=>{
   if(!pendingLL){ alert('Set a location first — drag the pin, tap the map, or search.'); return; }
@@ -939,6 +1525,15 @@ document.getElementById('locConfirm').onclick=()=>{
   }else{
     resetAddForm();
     document.getElementById('fLocStatus').textContent='📍 Location set';
+    const suggestion=nearestAreaSuggestion(pendingLL.lat,pendingLL.lng);
+    if(suggestion){
+      document.getElementById('fArea').value=suggestion.name;
+      document.getElementById('fAreaStatus').innerHTML=`📍 Matched to existing retailers here (${suggestion.km}km away) — edit if this is wrong`;
+      document.getElementById('fAreaStatus').style.color='var(--ok)';
+    }else{
+      document.getElementById('fAreaStatus').textContent='No retailers nearby — this looks like a new area, please type one';
+      document.getElementById('fAreaStatus').style.color='var(--muted)';
+    }
     document.getElementById('addSheet').classList.add('open');
   }
 };
@@ -1006,6 +1601,7 @@ window.openEdit=function(id){
   if(!session){ alert('Please sign in first.'); return; }
   editStore=allStores().find(s=>s.id===id); if(!editStore) return;
   editNewLL=null;
+  closeAllOverlays();
   document.getElementById('editOrigName').textContent=editStore.n+' · '+editStore.a;
   document.getElementById('eName').value=editStore.n||'';
   document.getElementById('eTel').value=editStore.c||'';
@@ -1089,6 +1685,7 @@ let ciStore=null;
 window.openCheckinWithStore=function(store){
   if(!session){ alert('Please sign in first.'); return; }
   ciStore=store; if(!ciStore)return;
+  closeAllOverlays();
   document.getElementById('ciStore').textContent=ciStore.n+' · '+ciStore.a;
   document.getElementById('ciRemarks').value='';
   document.getElementById('ciRemindDate').value='';
@@ -1096,6 +1693,14 @@ window.openCheckinWithStore=function(store){
   document.getElementById('ciOutcome').value='';
   document.getElementById('ciReason').value='';
   document.getElementById('ciReasonBox').style.display='none';
+  document.getElementById('ciPieces').value='';
+  document.getElementById('ciPiecesBox').style.display='none';
+  document.getElementById('ciStyle').value='';
+  document.getElementById('ciSpecs').value='';
+  document.getElementById('ciDelivery').value='';
+  document.getElementById('ciOrderBox').style.display='none';
+  populateCheckinTripSelect();
+  document.getElementById('ciTrip').value='';
   map.closePopup();
   document.getElementById('ciSheet').classList.add('open');
 };
@@ -1105,19 +1710,87 @@ window.openCheckin=function(id){
 };
 document.getElementById('ciOutcome').addEventListener('change',e=>{
   document.getElementById('ciReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
+  document.getElementById('ciPiecesBox').style.display = e.target.value==='stock_sold' ? '' : 'none';
+  document.getElementById('ciOrderBox').style.display = e.target.value==='order_taken' ? '' : 'none';
 });
 document.getElementById('ciCancel').onclick=()=>document.getElementById('ciSheet').classList.remove('open');
+
+/* ---- admin: edit a past check-in ---- */
+let editVisit=null;
+window.openEditVisit=function(id){
+  if(!session||session.role!=='admin'){ alert('Only admins can edit past check-ins.'); return; }
+  editVisit=visits.find(v=>v.id===id); if(!editVisit) return;
+  document.getElementById('evStore').textContent=editVisit.sn+' · '+editVisit.a+' · '+fmtD(editVisit.ts&&editVisit.ts.toMillis?editVisit.ts.toMillis():0);
+  const outcomeVal = editVisit.outcome==='sold' ? 'stock_sold' : (editVisit.outcome||''); // normalize legacy value
+  document.getElementById('evOutcome').value=outcomeVal;
+  document.getElementById('evReason').value=editVisit.reason||'';
+  document.getElementById('evPieces').value=editVisit.pieces||'';
+  document.getElementById('evStyle').value=editVisit.style||'';
+  document.getElementById('evSpecs').value=editVisit.specs||'';
+  document.getElementById('evDelivery').value=editVisit.deliveryDate||'';
+  document.getElementById('evRemarks').value=editVisit.r||'';
+  document.getElementById('evReasonBox').style.display = outcomeVal==='not_sold' ? '' : 'none';
+  document.getElementById('evPiecesBox').style.display = outcomeVal==='stock_sold' ? '' : 'none';
+  document.getElementById('evOrderBox').style.display = outcomeVal==='order_taken' ? '' : 'none';
+  document.getElementById('editVisitSheet').classList.add('open');
+};
+document.getElementById('evOutcome').addEventListener('change',e=>{
+  document.getElementById('evReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
+  document.getElementById('evPiecesBox').style.display = e.target.value==='stock_sold' ? '' : 'none';
+  document.getElementById('evOrderBox').style.display = e.target.value==='order_taken' ? '' : 'none';
+});
+document.getElementById('evCancel').onclick=()=>document.getElementById('editVisitSheet').classList.remove('open');
+document.getElementById('evSave').onclick=()=>{
+  if(!editVisit) return;
+  const outcome=document.getElementById('evOutcome').value;
+  const reason=document.getElementById('evReason').value;
+  const piecesRaw=document.getElementById('evPieces').value;
+  const style=document.getElementById('evStyle').value.trim();
+  const specs=document.getElementById('evSpecs').value.trim();
+  const delivery=document.getElementById('evDelivery').value;
+  if(!outcome){ alert('Please select what happened this visit.'); return; }
+  if(outcome==='not_sold' && !reason){ alert('Please select a reason.'); return; }
+  if(outcome==='stock_sold' && (!piecesRaw || +piecesRaw<1)){ alert('Please enter the number of pieces sold.'); return; }
+  if(outcome==='order_taken' && (!style || !specs || !delivery)){ alert('Please fill in style, specifications, and expected delivery date.'); return; }
+  const patch={
+    outcome:outcome,
+    r:document.getElementById('evRemarks').value.trim(),
+    editedBy:session.name,
+    editedAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  patch.reason = outcome==='not_sold' ? reason : firebase.firestore.FieldValue.delete();
+  patch.pieces = outcome==='stock_sold' ? +piecesRaw : firebase.firestore.FieldValue.delete();
+  if(outcome==='order_taken'){ patch.style=style; patch.specs=specs; patch.deliveryDate=delivery; }
+  else{ patch.style=firebase.firestore.FieldValue.delete(); patch.specs=firebase.firestore.FieldValue.delete(); patch.deliveryDate=firebase.firestore.FieldValue.delete(); }
+  db.collection(COL_VISITS).doc(editVisit.id).update(patch)
+    .then(()=>document.getElementById('editVisitSheet').classList.remove('open'))
+    .catch(e=>alert('Could not save correction — '+e.message));
+};
 document.getElementById('ciSave').onclick=()=>{
   const outcome = document.getElementById('ciOutcome').value;
   const reason = document.getElementById('ciReason').value;
-  if(!outcome){ alert('Please select whether they placed an order this visit.'); return; }
+  const piecesRaw = document.getElementById('ciPieces').value;
+  const style = document.getElementById('ciStyle').value.trim();
+  const specs = document.getElementById('ciSpecs').value.trim();
+  const delivery = document.getElementById('ciDelivery').value;
+  if(!outcome){ alert('Please select what happened this visit.'); return; }
   if(outcome==='not_sold' && !reason){ alert('Please select a reason.'); return; }
+  if(outcome==='stock_sold' && (!piecesRaw || +piecesRaw<1)){ alert('Please enter the number of pieces sold.'); return; }
+  if(outcome==='order_taken'){
+    if(!style){ alert('Please enter the style name.'); return; }
+    if(!specs){ alert('Please enter the specifications.'); return; }
+    if(!delivery){ alert('Please enter the expected delivery date.'); return; }
+  }
   const zk=effectiveZone(ciStore);
   const doc={sid:ciStore.id,sn:ciStore.n,a:ciStore.a,z:zk,by:session.name,
     r:document.getElementById('ciRemarks').value.trim(),
     outcome:outcome,
     ts:firebase.firestore.FieldValue.serverTimestamp()};
   if(outcome==='not_sold') doc.reason=reason;
+  if(outcome==='stock_sold') doc.pieces=+piecesRaw;
+  if(outcome==='order_taken'){ doc.style=style; doc.specs=specs; doc.deliveryDate=delivery; }
+  const tripId=document.getElementById('ciTrip').value;
+  if(tripId) doc.tripId=tripId;
   const remindDate=document.getElementById('ciRemindDate').value; // "YYYY-MM-DD" or ""
   const save=(pos)=>{
     if(pos){
@@ -1130,7 +1803,7 @@ document.getElementById('ciSave').onclick=()=>{
     db.collection(COL_VISITS).add(doc)
       .then(()=>{
         document.getElementById('ciSheet').classList.remove('open');
-        if(outcome==='sold' && ciStore.live){ // only a live, app-added retailer can graduate out of Prospect status
+        if((outcome==='stock_sold'||outcome==='order_taken') && ciStore.live){ // either sale type graduates a live retailer out of Prospect status
           db.collection(COL_RETAILERS).doc(ciStore.id).update({saleStatus:'sold'})
             .catch(e=>alert('Check-in saved, but could not update the store status — '+e.message));
         }
@@ -1149,23 +1822,55 @@ document.getElementById('ciSave').onclick=()=>{
 
 /* ---- report ---- */
 document.getElementById('rpBtn').onclick=()=>{
+  closeAllOverlays();
   if(session.role!=='admin'&&session.role!=='manager') rpWho=session.name;
-  document.getElementById('rpSearch').value=''; rpQuery=''; rpFlaggedOnly=false;
+  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false;
   document.getElementById('report').classList.add('open');drawReport();
 };
 document.getElementById('rpSearch').addEventListener('input',e=>{ rpQuery=e.target.value; drawReport(); });
-document.getElementById('pillFlagged').onclick=()=>{ rpFlaggedOnly=!rpFlaggedOnly; drawReport(); };
+document.getElementById('pillCustom').onclick=()=>{
+  rpCustomRange=!rpCustomRange;
+  if(rpCustomRange){
+    document.querySelectorAll('#periodPills .pill[data-d]').forEach(p=>p.classList.remove('on'));
+    if(!document.getElementById('rpFromDate').value){
+      const d=new Date(); d.setDate(d.getDate()-7);
+      document.getElementById('rpFromDate').value=d.toISOString().slice(0,10);
+      document.getElementById('rpToDate').value=todayStr();
+    }
+  }
+  drawReport();
+};
+document.getElementById('rpFromDate').addEventListener('change',()=>drawReport());
+document.getElementById('rpToDate').addEventListener('change',()=>drawReport());
+document.getElementById('rpZoneSelect').addEventListener('change',e=>{ rpZoneFilter=e.target.value; drawReport(); });
 document.getElementById('rpClose').onclick=()=>document.getElementById('report').classList.remove('open');
+document.getElementById('rpExportTop').onclick=()=>exportVisits();
+document.getElementById('rpExportPdfTop').onclick=()=>exportVisitsPdf();
 document.getElementById('periodPills').addEventListener('click',e=>{
   if(!e.target.dataset.d)return;
+  rpCustomRange=false;
   document.querySelectorAll('#periodPills .pill').forEach(p=>p.classList.remove('on'));
   e.target.classList.add('on'); rpDays=+e.target.dataset.d; drawReport();
 });
+window.setRpSubFilter=function(key){
+  rpSubFilter = (rpSubFilter===key) ? '' : key;
+  drawReport();
+};
 function drawReport(){
   const canSeeAllReports = session && (session.role==='admin' || session.role==='manager');
   if(!canSeeAllReports) rpWho=session.name; // sales can only ever see their own data
   document.getElementById('pillAll').textContent = canSeeAllReports ? 'All time' : 'Last 1 year';
-  let cutoff=rpDays?Date.now()-rpDays*864e5:0;
+  document.getElementById('pillCustom').classList.toggle('on', rpCustomRange);
+  document.getElementById('customRangeBox').style.display = rpCustomRange ? '' : 'none';
+  let cutoff, upperCutoff=Date.now()+864e5; // default: no upper bound (i.e. up to now, with a day's slack)
+  if(rpCustomRange){
+    const fromVal=document.getElementById('rpFromDate').value;
+    const toVal=document.getElementById('rpToDate').value;
+    cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
+    upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
+  }else{
+    cutoff = rpDays?Date.now()-rpDays*864e5:0;
+  }
   if(!canSeeAllReports){
     const oneYearAgo=Date.now()-365*864e5;
     if(cutoff===0 || cutoff<oneYearAgo) cutoff=oneYearAgo; // sales can never see beyond 1 year
@@ -1173,15 +1878,19 @@ function drawReport(){
   const qterm=rpQuery.trim().toLowerCase();
   const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-    if(t<cutoff) return false;
+    if(t<cutoff || t>upperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
-    if(qterm && !(v.sn||'').toLowerCase().includes(qterm)) return false;
+    if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
+    if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     return true;
   });
   const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin).length : 0;
-  const inRange=(rpFlaggedOnly && canSeeAllReports) ? preFlagFilter.filter(v=>v.farCheckin) : preFlagFilter;
-  document.getElementById('pillFlagged').style.display = canSeeAllReports ? '' : 'none';
-  document.getElementById('pillFlagged').classList.toggle('on',rpFlaggedOnly && canSeeAllReports);
+  const ordersCountBase = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken').length;
+  const piecesCountBase = preFlagFilter.reduce((s,v)=>s+(v.pieces||0),0);
+  let inRange = preFlagFilter;
+  if(rpSubFilter==='orders') inRange = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken');
+  else if(rpSubFilter==='pieces') inRange = preFlagFilter.filter(v=>(v.pieces||0)>0);
+  else if(rpSubFilter==='flagged' && canSeeAllReports) inRange = preFlagFilter.filter(v=>v.farCheckin);
   if(canSeeAllReports){
     const who=[...new Set(visits.map(v=>v.by).filter(Boolean))].sort();
     document.getElementById('whoPills').innerHTML=['<span class="pill '+(rpWho===''?'on':'')+'" data-w="">Everyone</span>']
@@ -1205,51 +1914,153 @@ function drawReport(){
   });
   const areas=Object.entries(byArea).sort((x,y)=>y[1].n-x[1].n);
   const activeStores=allStores().filter(s=>!disabled[s.id]).length;
-  const visitedStores=new Set(inRange.map(v=>v.sid)).size;
-  const flagNote = flaggedCount>0 ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${flaggedCount} flagged (100m+)</span>` : '';
-  let html=`<div class="rp-total"><b>${inRange.length}</b> check-ins · <b>${visitedStores}</b> of ${activeStores} active stores covered${rpWho?' · '+rpWho:''}${flagNote}</div>`;
+  const visitedStores=new Set(preFlagFilter.map(v=>v.sid)).size;
+  const covPct = activeStores>0 ? Math.round(100*visitedStores/activeStores) : 0;
+  const on=(key)=>rpSubFilter===key?'active':'';
+  let html='<div class="stat-row">'
+    + `<div class="stat-box ${on('')}" onclick="setRpSubFilter('')" style="cursor:pointer"><span class="sv">${preFlagFilter.length}</span><span class="sl">Check-ins</span></div>`
+    + `<div class="stat-box"><span class="sv">${visitedStores}/${activeStores}</span><span class="sl">Stores (${covPct}%)</span></div>`
+    + `<div class="stat-box ${on('orders')}" onclick="setRpSubFilter('orders')" style="cursor:pointer"><span class="sv">${ordersCountBase}</span><span class="sl">Orders placed</span></div>`
+    + `<div class="stat-box ${on('pieces')}" onclick="setRpSubFilter('pieces')" style="cursor:pointer"><span class="sv">${piecesCountBase}</span><span class="sl">Pieces sold</span></div>`
+    + (canSeeAllReports ? `<div class="stat-box ${flaggedCount>0?'warn':''} ${on('flagged')}" onclick="setRpSubFilter('flagged')" style="cursor:pointer"><span class="sv">${flaggedCount}</span><span class="sl">Flagged</span></div>` : '')
+    + '</div>';
+  if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='orders'?'Orders placed':rpSubFilter==='pieces'?'Pieces sold':'Flagged'}</b> — tap it again, or tap Check-ins, to see everything</div>`;
+  if(rpWho) html+=`<div class="rp-subline">Showing: <b style="font-family:'Bodoni Moda',serif">${rpWho}</b></div>`;
   if(!areas.length) html+='<div style="color:#8a8272;font-size:13px">No check-ins in this period yet. Open a store pin on the map and tap “Check in”.</div>';
   areas.forEach(([a,g])=>{
     const stRows=Object.entries(g.stores).sort((x,y)=>y[1].n-x[1].n).map(([sid,st])=>{
       const log=st.log.sort((x,y)=>(y.ts?.toMillis?.()||0)-(x.ts?.toMillis?.()||0)).map(v=>{
         const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
         const flagTag = (v.farCheckin && canSeeAllReports) ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
-        const outcomeTag = v.outcome==='sold' ? ` · <span style="color:var(--ok);font-weight:600">✓ Sold</span>`
-                          : v.outcome==='not_sold' ? ` · <span style="color:var(--z1);font-weight:600">✗ ${v.reason||'Not sold'}</span>` : '';
-        return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}</div></div>`;
+        const editTag = (canSeeAllReports && v.editedBy) ? ` · <span style="color:var(--muted);font-style:italic">edited by ${v.editedBy}</span>` : '';
+        const editLink = canSeeAllReports ? ` · <span class="pp-toggle" style="font-size:10px" onclick="openEditVisit('${v.id}')">✎ edit</span>` : '';
+        const om=outcomeMeta(v);
+        const outcomeTag = om.tag ? ` · ${om.tag}` : '';
+        return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}${editTag}${editLink}</div></div>`;
       }).join('');
-      return `<div class="store-row ${(qterm||rpFlaggedOnly)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span class="vc">${st.n}×</span></div><div class="visit-log">${log}</div></div>`;
+      const storePieces = st.log.reduce((sum,v)=>sum+(v.pieces||0),0);
+      const piecesBadge = `<span class="vc" style="color:${storePieces>0?'var(--gold)':'var(--cream-4)'};margin-left:6px">${storePieces} pcs</span>`;
+      return `<div class="store-row ${(qterm||rpSubFilter)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span><span class="vc">${st.n}×</span>${piecesBadge}</span></div><div class="visit-log">${log}</div></div>`;
     }).join('');
     const covered=Object.keys(g.stores).length, inArea=(storeTotals[a]||new Set()).size;
-    html+=`<div class="area-card ${(qterm||rpFlaggedOnly)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
+    const areaPieces=Object.values(g.stores).reduce((sum,st)=>sum+st.log.reduce((s2,v)=>s2+(v.pieces||0),0),0);
+    const areaPiecesNote = ` · <b>${areaPieces}</b> pcs`;
+    const covPct = inArea>0 ? Math.round(100*covered/inArea) : 0;
+    html+=`<div class="area-card ${(qterm||rpSubFilter)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
       <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
         <div class="an">${a}<small>${covered} of ${inArea||'?'} active stores covered</small></div>
-        <div class="ac"><b>${g.n}</b>visits</div></div>
+        <div class="ac"><b>${g.n}</b>visits${areaPiecesNote}</div></div>
+      <div class="area-progress"><div class="area-progress-fill" style="width:${covPct}%"></div></div>
       <div class="store-rows">${stRows}</div></div>`;
   });
-  if(canSeeAllReports){
-    html+=`<button class="btn ghost" style="margin-top:8px" onclick="exportVisits()">Export these check-ins (CSV)</button>`;
-  }
+  document.getElementById('rpExportTop').style.display = canSeeAllReports ? '' : 'none';
+  document.getElementById('rpExportPdfTop').style.display = canSeeAllReports ? '' : 'none';
   document.getElementById('rpBody').innerHTML=html;
 }
-window.exportVisits=function(){
-  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export the visit report.'); return; }
-  const cutoff=rpDays?Date.now()-rpDays*864e5:0;
+window.exportTripVisitsPdf=function(){
+  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export trip data.'); return; }
+  if(!currentTripReportId) return;
+  const t=trips.find(x=>x.id===currentTripReportId);
+  const rows=visits.filter(v=>v.tripId===currentTripReportId);
+  buildPdfFromVisits(rows, 'Bharni Gems — '+(t?tripLabel(t):'Trip'), 'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.pdf');
+};
+window.exportTripVisits=function(){
+  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export trip data.'); return; }
+  if(!currentTripReportId) return;
+  const t=trips.find(x=>x.id===currentTripReportId);
+  const rows=visits.filter(v=>v.tripId===currentTripReportId);
+  const data=rows.map(v=>{
+    const tt=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
+    const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
+    return {
+      'Date': tt?tt.toLocaleDateString('en-IN'):'', 'Time': tt?tt.toLocaleTimeString('en-IN'):'',
+      'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
+      'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
+      'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
+      'Remarks': v.r||''
+    };
+  });
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:11},{wch:9},{wch:26},{wch:18},{wch:22},{wch:14},{wch:12},{wch:24},{wch:9},{wch:22},{wch:30},{wch:14},{wch:30}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Trip');
+  XLSX.writeFile(wb,'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.xlsx');
+};
+function getFilteredVisitsForExport(){
+  let cutoff, upperCutoff=Date.now()+864e5;
+  if(rpCustomRange){
+    const fromVal=document.getElementById('rpFromDate').value;
+    const toVal=document.getElementById('rpToDate').value;
+    cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
+    upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
+  }else{
+    cutoff = rpDays?Date.now()-rpDays*864e5:0;
+  }
   const qterm=rpQuery.trim().toLowerCase();
-  const rows=visits.filter(v=>{
+  return visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-    if(t<cutoff) return false;
+    if(t<cutoff || t>upperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
-    if(qterm && !(v.sn||'').toLowerCase().includes(qterm)) return false;
+    if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
+    if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
+    if(rpSubFilter==='flagged' && !v.farCheckin) return false;
+    if(rpSubFilter==='orders' && !(v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken')) return false;
+    if(rpSubFilter==='pieces' && !((v.pieces||0)>0)) return false;
     return true;
   });
-  let csv='Date,Time,Store,Area,Group,Salesman,Remarks,GPS Lat,GPS Lng\n';
-  rows.forEach(v=>{const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
-    csv+=`"${t?t.toLocaleDateString('en-IN'):''}","${t?t.toLocaleTimeString('en-IN'):''}","${v.sn}","${v.a||''}","${zName(v.z)}","${v.by||''}","${(v.r||'').replace(/"/g,"'")}",${v.glat||''},${v.glng||''}\n`;});
-  const b=new Blob([csv],{type:'text/csv'}),u=URL.createObjectURL(b),l=document.createElement('a');
-  l.href=u;l.download='bharni_visits.csv';l.click();URL.revokeObjectURL(u);
+}
+function buildPdfFromVisits(rows, title, filename){
+  if(!rows.length){ alert('Nothing to export for the current view.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text(title, 14, 15);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Generated '+new Date().toLocaleString('en-IN'), 14, 21);
+  const body = rows.map(v=>{
+    const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
+    const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
+    return [
+      t?t.toLocaleDateString('en-IN'):'', v.sn, v.a||'', v.by||'',
+      outcomeLabel, v.pieces||'', v.style||'', v.deliveryDate||'', v.reason||v.r||''
+    ];
+  });
+  doc.autoTable({
+    startY: 26,
+    head: [['Date','Store','Area','Salesman','Outcome','Pieces','Style','Delivery','Notes']],
+    body: body,
+    styles:{fontSize:8, cellPadding:2},
+    headStyles:{fillColor:[28,23,18], textColor:[244,240,232]},
+    alternateRowStyles:{fillColor:[244,240,232]}
+  });
+  doc.save(filename);
+}
+window.exportVisitsPdf=function(){
+  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export the visit report.'); return; }
+  buildPdfFromVisits(getFilteredVisitsForExport(), 'Bharni Gems — Visit Report', 'bharni_visits_'+todayStr()+'.pdf');
+};
+window.exportVisits=function(){
+  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export the visit report.'); return; }
+  const rows=getFilteredVisitsForExport();
+  const data=rows.map(v=>{
+    const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
+    const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
+    return {
+      'Date': t?t.toLocaleDateString('en-IN'):'', 'Time': t?t.toLocaleTimeString('en-IN'):'',
+      'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
+      'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
+      'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
+      'Remarks': v.r||'', 'GPS Lat': v.glat||'', 'GPS Lng': v.glng||''
+    };
+  });
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:11},{wch:9},{wch:26},{wch:18},{wch:22},{wch:14},{wch:12},{wch:24},{wch:9},{wch:22},{wch:30},{wch:14},{wch:30},{wch:10},{wch:10}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Visits');
+  XLSX.writeFile(wb,'bharni_visits_'+todayStr()+'.xlsx');
 };
 
+populateReportZoneFilter();
 render();
 try{
   if(firebaseConfig.projectId==='PASTE_HERE') throw new Error('Firebase config not filled — open the file and paste it at STEP 1.');
@@ -1259,7 +2070,9 @@ try{
   db.collection(COL_RETAILERS).onSnapshot(s=>{liveStores=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();},
     e=>alert('Retailer sync error: '+e.message));
   db.collection(COL_VISITS).onSnapshot(s=>{visits=s.docs.map(d=>Object.assign({id:d.id},d.data()));buildStats();render();
-    if(document.getElementById('report').classList.contains('open'))drawReport();},
+    if(document.getElementById('report').classList.contains('open'))drawReport();
+    updateTripBadge();
+    if(document.getElementById('tripsPanel').classList.contains('open'))drawTrips();},
     e=>alert('Visit sync error: '+e.message));
   db.collection(COL_DISABLED).onSnapshot(s=>{disabled={};s.docs.forEach(d=>disabled[d.id]=d.data());render();
     if(document.getElementById('report').classList.contains('open'))drawReport();},
@@ -1270,6 +2083,15 @@ try{
     customZones={}; s.docs.forEach(d=>customZones[d.id]=d.data());
     renderCustomChips(); refreshZoneDropdowns(); render();
   }, e=>alert('Zones sync error: '+e.message));
+  db.collection(COL_TRIPS).onSnapshot(s=>{
+    trips=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    updateTripBadge(); populateCheckinTripSelect();
+    if(document.getElementById('tripsPanel').classList.contains('open')) drawTrips();
+    if(document.getElementById('tripReportPanel').classList.contains('open')){
+      const openTitle=document.getElementById('tripReportTitle').textContent;
+      const t=trips.find(x=>tripLabel(x)===openTitle); if(t) openTripReport(t.id);
+    }
+  }, e=>alert('Trips sync error: '+e.message));
 
   auth.onAuthStateChanged(user=>{
     if(!user){ session=null; return; }
