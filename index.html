@@ -136,11 +136,43 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .sheet-btns{display:flex;gap:10px;margin-top:18px}
 .sheet-btns .btn{flex:1;padding:12px}
 #report{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
+#stockPage{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
+#stockPage.open{display:flex}
+#stockPage header{padding:12px 16px}
+.stock-card{background:#fff;border:1px solid var(--cream-3);border-left:3px solid var(--gold-dim);border-radius:2px;padding:13px 15px;margin-bottom:10px}
+.stock-card.due{border-left-color:var(--z1)}
+.stock-card .sc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.stock-card .sc-name{font-family:'Cinzel',serif;font-size:14px;font-weight:600}
+.stock-card .sc-date{font-size:10.5px;color:var(--muted)}
+.stock-card .sc-stats{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+.stock-card .sc-stats b{font-family:'Bodoni Moda',serif;color:var(--ink)}
+.stock-card .sc-due-badge{display:inline-block;background:var(--z1);color:#fff;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;border-radius:9px;padding:2px 9px;margin-top:6px}
+.stock-card .sc-done-badge{display:inline-block;background:var(--ok);color:#fff;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;border-radius:9px;padding:2px 9px;margin-top:6px}
+.stock-card .sc-resolve{font-size:11px;color:var(--gold);text-decoration:underline;cursor:pointer;margin-top:8px;display:inline-block}
+.cat-chip{border:1px solid var(--cream-4);border-radius:20px;padding:7px 13px;font-size:12px;cursor:pointer;background:#fff;color:var(--ink);letter-spacing:.02em}
+.cat-chip.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+.inline-card{background:#fff;border:1px solid var(--cream-3);border-left:3px solid var(--gold-dim);border-radius:2px;padding:13px 15px;margin-bottom:10px}
+.inline-card.due{border-left-color:var(--z1)}
+.inline-card .ic-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.inline-form{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--cream-4)}
+.inline-card.open .inline-form{display:block}
+.inline-form label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);display:block;margin:8px 0 4px}
+.inline-form label:first-child{margin-top:0}
+.inline-form input,.inline-form select{width:100%;background:var(--cream);border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'}
+.ledger-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px;padding:8px 4px;font-size:11.5px;text-align:center;border-bottom:1px solid var(--cream-2);align-items:center}
+.ledger-row.head{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--cream-4)}
+.ledger-row .lv{font-family:'Bodoni Moda',serif;font-weight:600;color:var(--ink)}
+.ledger-row.today{background:var(--cream-2)}
+.ledger-edit{font-size:10px;color:var(--gold);text-decoration:underline;cursor:pointer}
+.ledger-block{border-bottom:1px solid var(--cream-3)}
+.ledger-block .ledger-row{border-bottom:none}
+.cat-breakdown{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.3;font-family:'Questrial'}
+.ledger-edit-row{display:none;padding:12px 8px;background:var(--cream-2)}
+.ledger-block.editing .ledger-edit-row{display:block}
+.edit-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.edit-cat-grid label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;align-self:center;font-family:'Questrial'}
+.edit-cat-grid input{width:100%;padding:6px 8px;font-size:12px;border:1px solid var(--cream-4);border-radius:2px;background:#fff;font-family:'Questrial'}
 #reminders{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
-#tripsPanel{position:fixed;inset:0;background:var(--cream);z-index:1200;display:none;flex-direction:column}
-#tripsPanel.open{display:flex}
-#tripsPanel header{padding:12px 16px}
-#tripsBody{flex:1;overflow-y:auto;padding:14px 16px 40px}
 #tripReportPanel{position:fixed;inset:0;background:var(--cream);z-index:1250;display:none;flex-direction:column}
 #tripReportPanel.open{display:flex}
 #tripReportPanel header{padding:12px 16px}
@@ -187,6 +219,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 #report header{padding:12px 16px}
 .rp-filters{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
 .pill{border:1px solid var(--cream-4);color:var(--muted);border-radius:2px;padding:4px 11px;font-size:10.5px;letter-spacing:.08em;cursor:pointer;text-transform:uppercase;font-family:'Questrial'}
+.stock-tab{border:1px solid var(--gold-dim);color:var(--ink);border-radius:2px;padding:9px 18px;font-size:14px;font-weight:600;letter-spacing:.02em;cursor:pointer;font-family:'Cinzel',serif;flex:1;text-align:center}
+.stock-tab.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 .pill.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 #rpBody{flex:1;overflow-y:auto;padding:14px 16px 40px}
 .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin-bottom:16px}
@@ -211,6 +245,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 .area-progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .3s}
 .store-rows{display:none;border-top:1px solid var(--cream-2)}
 .area-card.open .store-rows{display:block}
+.trip-card.open .store-rows{display:block}
 .store-row{padding:10px 15px;border-bottom:1px solid var(--cream-2);cursor:pointer}
 .store-row:last-child{border-bottom:none}
 .store-row .sn{font-size:12.5px;display:flex;justify-content:space-between;gap:8px}
@@ -266,8 +301,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <button class="btn" id="addBtn">+ Add</button>
     <button class="btn ghost" id="rmBtn">Reminders<span id="rmBadge" style="display:none"></span></button>
     <button class="btn ghost" id="rpBtn">Report</button>
-    <button class="btn ghost" id="tripBtn">Trips<span id="tripBadge" style="display:none"></span></button>
     <button class="btn ghost" id="excelBtn">Excel</button>
+    <button class="btn ghost" id="stockBtn">Stock</button>
   </div>
   <div class="chip-strip">
     <span class="chip z1" data-z="1"><span class="dot"></span>Hyd Z1</span>
@@ -329,7 +364,6 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 
 <div class="sheet" id="zoneSheet">
   <h3>Create a new zone</h3>
-  <div class="sub">Add a coverage group beyond the built-in ones — it'll appear as a chip and in every "Coverage group" dropdown immediately.</div>
   <label>Zone name</label><input id="zName" placeholder="e.g. Vizag Belt">
   <label>Colour</label><input id="zColorPick" type="color" value="#7A5230" style="height:44px;padding:4px">
   <div class="sheet-btns">
@@ -352,7 +386,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v38.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v48.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -373,6 +407,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <label>Area</label><input id="fArea" placeholder="e.g. Kompally">
   <div id="fAreaStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
   <label>Pincode</label><input id="fPin" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
+  <label>Full address</label><textarea id="fFullAddr" rows="2" placeholder="e.g. Shop No. 4, Near XYZ Temple, Main Road"></textarea>
   <label>Coverage group (for map colour)</label>
   <select id="fZone">
     <option value="1">Hyderabad Zone 1 — Central, Old City & South</option>
@@ -531,6 +566,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <div id="ciPiecesBox" style="display:none">
       <label>Number of pieces sold</label>
       <input id="ciPieces" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 3">
+      <label>Category</label>
+      <div class="rp-filters" id="ciCategoryChips"></div>
     </div>
     <div id="ciOrderBox" style="display:none">
       <label>Style name</label>
@@ -585,6 +622,8 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <div id="evPiecesBox" style="display:none">
     <label>Number of pieces sold</label>
     <input id="evPieces" type="number" inputmode="numeric" min="1" step="1">
+    <label>Category</label>
+    <div class="rp-filters" id="evCategoryChips"></div>
   </div>
   <div id="evOrderBox" style="display:none">
     <label>Style name</label>
@@ -596,7 +635,6 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   </div>
   <label>Remarks</label>
   <textarea id="evRemarks" rows="3"></textarea>
-  <div class="sub" style="margin-top:10px">Saving this shows "edited by you" to admins and managers, so the correction stays visible rather than silently overwriting the original.</div>
   <div class="sheet-btns">
     <button class="btn ghost" id="evCancel">Cancel</button>
     <button class="btn" id="evSave">Save correction</button>
@@ -608,12 +646,17 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <div class="brand-row">
       <div style="display:flex;align-items:center;gap:10px">
         <button class="back-arrow" id="rpClose">←</button>
-        <div class="panel-title">Visit Report<small>Area-wise coverage</small></div>
+        <div class="panel-title" id="rpTitle">Visit Report<small>Area-wise coverage</small></div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn" id="rpNewTripBtn" style="display:none;padding:7px 10px;font-size:11px">+ Trip</button>
         <button class="btn ghost" id="rpExportTop" style="display:none;padding:7px 10px;font-size:11px">⬇ Excel</button>
         <button class="btn ghost" id="rpExportPdfTop" style="display:none;padding:7px 10px;font-size:11px">📄 PDF</button>
       </div>
+    </div>
+    <div class="rp-filters" id="rpTabs" style="margin-top:9px">
+      <span class="pill on" id="rpTabVisits">Visits</span>
+      <span class="pill" id="rpTabTrips">Trips<span id="tripBadge" style="display:none"></span></span>
     </div>
     <input id="rpSearch" type="search" placeholder="Search a retailer to see their visit history…" style="width:100%;margin-top:9px;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
     <select id="rpZoneSelect" style="width:100%;margin-top:7px;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
@@ -635,6 +678,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <div class="rp-filters" id="whoPills"></div>
   </header>
   <div id="rpBody"></div>
+  <div id="rpTripsBody" style="display:none;padding:14px 16px 40px;overflow-y:auto;flex:1"></div>
 </div>
 
 <div id="reminders">
@@ -693,14 +737,47 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   </div>
 </div>
 
+<div id="stockPage">
+  <header>
+    <div class="brand-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="back-arrow" id="stockClose">←</button>
+        <div class="panel-title" id="stockTitle">Stock<small>Daily carry, approval &amp; repair</small></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn ghost" id="stockExportTop" style="display:none;padding:7px 10px;font-size:11px">⬇ Excel</button>
+        <button class="btn ghost" id="stockExportPdfTop" style="display:none;padding:7px 10px;font-size:11px">📄 PDF</button>
+      </div>
+    </div>
+    <div class="rp-filters" id="stockTabsRow" style="margin-top:9px">
+      <span class="stock-tab on" id="stockTabDaily">Marketing</span>
+      <span class="stock-tab" id="stockTabApproval">Approval</span>
+      <span class="stock-tab" id="stockTabRepair">Repair</span>
+    </div>
+    <div class="rp-filters" id="stockPeriodPills">
+      <span class="pill" data-d="1">Today</span>
+      <span class="pill on" data-d="7">7 days</span>
+      <span class="pill" data-d="30">30 days</span>
+      <span class="pill" data-d="0" id="stockPillAll">All time</span>
+      <span class="pill" id="stockPillCustom">📅 Custom range</span>
+    </div>
+    <div id="stockCustomRangeBox" style="display:none;margin-top:8px">
+      <label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:4px">From</label>
+      <input id="stockFromDate" type="date" style="width:100%;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+      <label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);display:block;margin:8px 0 4px">To</label>
+      <input id="stockToDate" type="date" style="width:100%;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+    </div>
+    <div class="rp-filters" id="stockWhoPills"></div>
+  </header>
+  <div id="stockBody" style="flex:1;overflow-y:auto;padding:14px 16px 40px"></div>
+</div>
+
 <div class="sheet" id="excelSheet">
   <h3>Retailer data — Excel</h3>
-  <div class="sub">Basic details only: name, mobile, state, district, area, pincode, address.</div>
   <button class="btn" id="excelExportBtn" style="width:100%;margin-top:10px">⬇ Download all retailers (.xlsx)</button>
   <div id="excelImportZone" style="display:none">
     <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--cream-4)">
       <div class="admin-label" style="color:var(--gold)">Bulk update</div>
-      <div class="sub" style="margin-bottom:8px">Edit the downloaded file, then upload it here. Only existing retailers are updated — this can't add new ones or change their map location.</div>
       <input type="file" id="excelUploadInput" accept=".xlsx,.xls">
       <div id="excelPreviewBox" style="display:none;margin-top:12px">
         <div id="excelPreviewSummary" style="font-size:12.5px;color:var(--muted);margin-bottom:8px"></div>
@@ -712,18 +789,6 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <div class="sheet-btns" style="margin-top:16px">
     <button class="btn ghost" id="excelCancel">Close</button>
   </div>
-</div>
-
-<div id="tripsPanel">
-  <header>
-    <div class="brand-row">
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="back-arrow" id="tripsClose">←</button>
-        <div class="panel-title">Trips<small>Active &amp; past coverage runs</small></div>
-      </div>
-    </div>
-  </header>
-  <div id="tripsBody"></div>
 </div>
 
 <div id="tripReportPanel">
@@ -769,6 +834,9 @@ const COL_REMINDERS = "map_reminders";
 const COL_OVERRIDES = "map_overrides";
 const COL_ZONES = "map_zones";
 const COL_TRIPS = "map_trips";
+const COL_CARRY = "map_carry";
+const COL_APPROVAL = "map_approval";
+const COL_REPAIR = "map_repair";
 const USERNAME_DOMAIN = "bharnigems.local";  // internal only — your team never sees this
 /* ============================================================
    STEP 3 — CREATE YOUR TEAM'S LOGIN ACCOUNTS (username-based)
@@ -816,14 +884,15 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,att
 
 let db=null, auth=null, liveStores=[], visits=[], markers=[], disabled={};
 let zoneOn={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false,0:false,10:false,11:false,12:false}, query='';
-let vStats={}, rpDays=7, rpWho='', rpQuery='', rpSubFilter='', rpZoneFilter='', rpCustomRange=false;
+let vStats={}, rpDays=7, rpWho='', rpQuery='', rpSubFilter='', rpZoneFilter='', rpCustomRange=false, rpActiveTab='visits', rpShowCategories=false;
 let trips=[], editingTripId=null, currentTripReportId=null;
 let session=null; // {uid,name,role,email}
 function closeAllOverlays(){
-  ['addSheet','editSheet','ciSheet','tripSheet','excelSheet','editVisitSheet','newReminderSheet','locPicker'].forEach(id=>{
+  ['addSheet','editSheet','ciSheet','tripSheet','excelSheet','editVisitSheet','newReminderSheet',
+   'locPicker'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.remove('open');
   });
-  ['reminders','tripsPanel','tripReportPanel','report'].forEach(id=>{
+  ['reminders','tripReportPanel','report','stockPage'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.remove('open');
   });
 }
@@ -866,7 +935,447 @@ function enterApp(profile){
 }
 
 let reminders=[];
+let carryEntries=[], approvals=[], repairs=[];
+const STOCK_CATEGORIES=['Mix','Nosepin','Earrings','Rings','Tanmania','Bracelet','Necklace','Chain','Pendant','Bangle'];
 let autoPopupShown=false;
+
+/* ==================== STOCK PAGE ==================== */
+let stockActiveTab='daily', stockRpDays=7, stockRpWho='', stockCustomRange=false;
+let approvalRetailerChosen=null, mktSelectedPerson='';
+
+document.getElementById('stockBtn').onclick=()=>{
+  if(!session){ alert('Please sign in first.'); return; }
+  closeAllOverlays();
+  stockActiveTab='daily'; stockRpWho=''; stockCustomRange=false; mktSelectedPerson='';
+  document.getElementById('stockPage').classList.add('open');
+  drawStockPage();
+};
+document.getElementById('stockClose').onclick=()=>document.getElementById('stockPage').classList.remove('open');
+document.getElementById('stockExportTop').onclick=()=>exportStockExcel();
+document.getElementById('stockExportPdfTop').onclick=()=>exportStockPdf();
+document.getElementById('stockTabDaily').onclick=()=>{ stockActiveTab='daily'; drawStockPage(); };
+document.getElementById('stockTabApproval').onclick=()=>{ stockActiveTab='approval'; drawStockPage(); };
+document.getElementById('stockTabRepair').onclick=()=>{ stockActiveTab='repair'; drawStockPage(); };
+document.getElementById('stockPeriodPills').addEventListener('click',e=>{
+  if(!e.target.dataset.d) return;
+  stockCustomRange=false;
+  document.querySelectorAll('#stockPeriodPills .pill').forEach(p=>p.classList.remove('on'));
+  e.target.classList.add('on'); stockRpDays=+e.target.dataset.d; drawStockPage();
+});
+document.getElementById('stockPillCustom').onclick=()=>{
+  stockCustomRange=!stockCustomRange;
+  if(stockCustomRange){
+    document.querySelectorAll('#stockPeriodPills .pill[data-d]').forEach(p=>p.classList.remove('on'));
+    if(!document.getElementById('stockFromDate').value){
+      const d=new Date(); d.setDate(d.getDate()-7);
+      document.getElementById('stockFromDate').value=localDateStr(d.getTime());
+      document.getElementById('stockToDate').value=todayStr();
+    }
+  }
+  drawStockPage();
+};
+document.getElementById('stockFromDate').addEventListener('change',()=>drawStockPage());
+document.getElementById('stockToDate').addEventListener('change',()=>drawStockPage());
+
+function stockCutoffs(){
+  let cutoff, upperCutoff=Date.now()+864e5;
+  if(stockCustomRange){
+    const fromVal=document.getElementById('stockFromDate').value;
+    const toVal=document.getElementById('stockToDate').value;
+    cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
+    upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
+  }else{
+    cutoff = stockRpDays?Date.now()-stockRpDays*864e5:0;
+  }
+  return {cutoff,upperCutoff};
+}
+function drawStockPage(){
+  const canSeeAll = session && session.role==='admin';
+  if(!canSeeAll){ stockRpWho=session.name; mktSelectedPerson=session.name; }
+  document.getElementById('stockTabDaily').classList.toggle('on', stockActiveTab==='daily');
+  document.getElementById('stockTabApproval').classList.toggle('on', stockActiveTab==='approval');
+  document.getElementById('stockTabRepair').classList.toggle('on', stockActiveTab==='repair');
+  document.getElementById('stockPeriodPills').style.display = stockActiveTab==='daily' ? 'none' : '';
+  document.getElementById('stockPillAll').textContent = canSeeAll ? 'All time' : 'Last 1 year';
+  document.getElementById('stockPillCustom').classList.toggle('on', stockCustomRange);
+  document.getElementById('stockCustomRangeBox').style.display = (stockCustomRange && stockActiveTab!=='daily') ? '' : 'none';
+  document.getElementById('stockExportTop').style.display = canSeeAll ? '' : 'none';
+  document.getElementById('stockExportPdfTop').style.display = canSeeAll ? '' : 'none';
+  const {cutoff,upperCutoff}=stockCutoffs();
+  const finalCutoff = canSeeAll ? cutoff : Math.max(cutoff, Date.now()-365*864e5);
+  if(canSeeAll){
+    const allPeople=[...new Set(carryEntries.map(c=>c.by).concat(approvals.map(a=>a.by)).concat(repairs.map(r=>r.by)))].filter(Boolean).sort();
+    document.getElementById('stockWhoPills').innerHTML=['<span class="pill '+(stockRpWho===''?'on':'')+'" data-w="">Everyone</span>']
+      .concat(allPeople.map(w=>`<span class="pill ${stockRpWho===w?'on':''}" data-w="${w}">${w}</span>`)).join('');
+    document.querySelectorAll('#stockWhoPills .pill').forEach(p=>p.onclick=()=>{stockRpWho=p.dataset.w; mktSelectedPerson=p.dataset.w; drawStockPage();});
+  }else{
+    document.getElementById('stockWhoPills').innerHTML=`<span class="pill on" style="cursor:default">${session.name}</span>`;
+  }
+  if(stockActiveTab==='daily') drawMarketingTab(finalCutoff,upperCutoff,canSeeAll);
+  else if(stockActiveTab==='approval') drawApprovalTab(finalCutoff,upperCutoff,canSeeAll);
+  else drawRepairTab(finalCutoff,upperCutoff,canSeeAll);
+}
+
+/* ---- Marketing: running ledger, opening carried forward automatically each day ---- */
+function computeLedgerForPerson(person){
+  const entries=carryEntries.filter(c=>c.by===person);
+  const soldVisits=visits.filter(v=>v.by===person && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0);
+  const catByDate={}, rawByDate={};
+  entries.forEach(e=>{
+    if(!catByDate[e.date]) catByDate[e.date]={};
+    catByDate[e.date][e.category]=(catByDate[e.date][e.category]||0)+(e.count||0);
+    if(!rawByDate[e.date]) rawByDate[e.date]=[];
+    rawByDate[e.date].push(e);
+  });
+  const soldByDate={}, soldCatByDate={};
+  soldVisits.forEach(v=>{
+    const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0; if(!t) return;
+    const d=localDateStr(t);
+    soldByDate[d]=(soldByDate[d]||0)+v.pieces;
+    if(!soldCatByDate[d]) soldCatByDate[d]={};
+    const cat=v.category||'Uncategorised';
+    soldCatByDate[d][cat]=(soldCatByDate[d][cat]||0)+v.pieces;
+  });
+  const allDates=[...new Set(Object.keys(catByDate).concat(Object.keys(soldByDate)))].sort();
+  let running=0;
+  return allDates.map(date=>{
+    const cats=catByDate[date]||{};
+    const additions=Object.values(cats).reduce((s,n)=>s+n,0);
+    const sales=soldByDate[date]||0;
+    const soldCats=soldCatByDate[date]||{};
+    const opening=running, eod=opening+additions-sales;
+    running=eod;
+    const rawEntries=(rawByDate[date]||[]).sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0));
+    return {date,opening,additions,sales,eod,cats,soldCats,rawEntries};
+  });
+}
+function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
+  const body=document.getElementById('stockBody');
+  if(!mktSelectedPerson){
+    const allPeople=[...new Set(carryEntries.map(c=>c.by))].filter(Boolean).sort();
+    let html='';
+    if(!allPeople.length){ html+='<div class="rm-empty">No stock logged yet.</div>'; body.innerHTML=html; return; }
+    html+=allPeople.map(p=>{
+      const rows=computeLedgerForPerson(p);
+      const latest=rows.length?rows[rows.length-1]:{eod:0};
+      return `<div class="inline-card" onclick="mktSelectedPerson='${p}'; stockRpWho='${p}'; drawStockPage();" style="cursor:pointer">
+        <div class="ic-head"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">${p}</span><span class="lv">${latest.eod} in hand now</span></div>
+      </div>`;
+    }).join('');
+    body.innerHTML=html;
+    return;
+  }
+  const rows=computeLedgerForPerson(mktSelectedPerson).slice().reverse();
+  const latestEod=rows.length?rows[0].eod:0;
+  const today=todayStr();
+  let html = canSeeAll ? `<span class="ledger-edit" onclick="mktSelectedPerson=''; stockRpWho=''; drawStockPage();">← All salespeople</span>` : '';
+  html += `<div class="stat-row" style="margin-top:10px"><div class="stat-box"><span class="sv">${latestEod}</span><span class="sl">In hand right now</span></div></div>`;
+  html += `<div class="inline-card" id="mktAddCard">
+    <div class="ic-head" onclick="this.parentElement.classList.toggle('open')"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">+ Add pieces</span><span class="ledger-edit">tap to open</span></div>
+    <div class="inline-form">
+      <div class="edit-cat-grid">${STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="mktAddQty_${c}" type="number" min="0" step="1" placeholder="0">`).join('')}</div>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveMarketingAdd()">Save</button>
+    </div>
+  </div>`;
+  html += `<div class="ledger-row head"><span>Date</span><span>Opening</span><span>Added</span><span>Sold</span><span>EOD</span></div>`;
+  if(!rows.length){ html+='<div class="rm-empty">No activity logged yet.</div>'; }
+  else{
+    html += rows.map(r=>{
+      const isToday=r.date===today;
+      const catLine=Object.entries(r.cats).map(([c,n])=>`${n} ${c}`).join(', ') || '—';
+      const soldCatLine=Object.entries(r.soldCats).map(([c,n])=>`${n} ${c}`).join(', ') || '—';
+      const entryLines=r.rawEntries.map(e=>{
+        const t=e.ts&&e.ts.toMillis?e.ts.toMillis():0;
+        const timeStr=t?new Date(t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}):'';
+        const sign=e.count>0?'+':'';
+        const tag=e.adjustment?`<span style="color:var(--z1)"> — adjustment by ${e.adjustedBy}${e.note?': '+e.note:''}</span>`:'';
+        return `<div class="v-item">${sign}${e.count} ${e.category}${timeStr?' · '+timeStr:''}${tag}</div>`;
+      }).join('') || '<div class="rm-empty">No entries.</div>';
+      const adjustForm = canSeeAll ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--cream-4)">
+        <label>Category</label>
+        <select id="adjCat_${r.date}">${STOCK_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+        <label>Adjustment (+ to add, - to reduce)</label>
+        <input id="adjCount_${r.date}" type="number" step="1" placeholder="e.g. -5">
+        <label>Reason (required)</label>
+        <input id="adjNote_${r.date}" placeholder="e.g. Corrected miscount">
+        <button class="btn" style="width:100%;margin-top:8px" onclick="event.stopPropagation();saveMarketingAdjustment('${r.date}')">Save adjustment</button>
+      </div>` : '';
+      return `<div class="ledger-block">
+        <div class="ledger-row ${isToday?'today':''}" onclick="this.parentElement.classList.toggle('editing')" style="cursor:pointer">
+          <span>${fmtD(new Date(r.date+'T00:00:00').getTime())}</span>
+          <span class="lv">${r.opening}</span>
+          <span class="lv">${r.additions}<div class="cat-breakdown">${catLine}</div></span>
+          <span class="lv">${r.sales}<div class="cat-breakdown">${soldCatLine}</div></span>
+          <span class="lv">${r.eod}</span>
+        </div>
+        <div class="ledger-edit-row">
+          ${entryLines}
+          ${adjustForm}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  body.innerHTML=html;
+}
+window.saveMarketingAdd=function(){
+  const batch=db.batch();
+  let any=false;
+  STOCK_CATEGORIES.forEach(cat=>{
+    const el=document.getElementById('mktAddQty_'+cat);
+    const val=el?(+el.value||0):0;
+    if(val>0){
+      any=true;
+      batch.set(db.collection(COL_CARRY).doc(), {
+        by: mktSelectedPerson||session.name, foruid:session.uid, date:todayStr(), category:cat, count:val,
+        ts:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  });
+  if(!any){ alert('Please enter at least one category count.'); return; }
+  batch.commit().then(()=>{
+    STOCK_CATEGORIES.forEach(cat=>{ const el=document.getElementById('mktAddQty_'+cat); if(el) el.value=''; });
+  }).catch(e=>alert('Could not save — '+e.message));
+};
+window.saveMarketingAdjustment=function(date){
+  if(!session||session.role!=='admin'){ alert('Only admins can make adjustments.'); return; }
+  const cat=document.getElementById('adjCat_'+date).value;
+  const amt=+document.getElementById('adjCount_'+date).value;
+  const note=document.getElementById('adjNote_'+date).value.trim();
+  if(!amt){ alert('Please enter an adjustment amount (positive or negative).'); return; }
+  if(!note){ alert('Please enter a reason for this adjustment — it stays visible in the history permanently.'); return; }
+  const person=mktSelectedPerson||session.name;
+  db.collection(COL_CARRY).add({
+    by:person, foruid:session.uid, date:date, category:cat, count:amt,
+    adjustment:true, adjustedBy:session.name, note:note,
+    ts:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(e=>alert('Could not save — '+e.message));
+};
+
+
+
+/* ---- Approval: inline give + inline resolve ---- */
+function drawApprovalTab(cutoff,upperCutoff,canSeeAll){
+  const inRange=approvals.filter(a=>{
+    const ms=new Date(a.dateGiven+'T00:00:00').getTime();
+    return ms>=cutoff && ms<=upperCutoff && (!stockRpWho || a.by===stockRpWho);
+  }).sort((a,b)=>b.dateGiven.localeCompare(a.dateGiven));
+  const totalGiven=inRange.reduce((s,a)=>s+a.pieces,0);
+  const totalSold=inRange.reduce((s,a)=>s+(a.sold||0),0);
+  const totalReturned=inRange.reduce((s,a)=>s+(a.returned||0),0);
+  const totalDue=inRange.reduce((s,a)=>s+(a.pieces-(a.sold||0)-(a.returned||0)),0);
+  let html=`<div class="stat-row">
+    <div class="stat-box"><span class="sv">${totalGiven}</span><span class="sl">Given</span></div>
+    <div class="stat-box"><span class="sv">${totalSold}</span><span class="sl">Sold</span></div>
+    <div class="stat-box"><span class="sv">${totalReturned}</span><span class="sl">Returned</span></div>
+    <div class="stat-box ${totalDue>0?'warn':''}"><span class="sv">${totalDue}</span><span class="sl">Due</span></div>
+  </div>`;
+  html+=`<div class="inline-card" id="approvalNewCard">
+    <div class="ic-head" onclick="this.parentElement.classList.toggle('open')"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">+ Give pieces on approval</span><span class="ledger-edit">tap to open</span></div>
+    <div class="inline-form">
+      <label>Retailer</label>
+      <div style="position:relative">
+        <input id="approvalRetailerSearch" placeholder="Search or type retailer name…" autocomplete="off">
+        <div id="approvalSuggest"></div>
+      </div>
+      <label>Pieces given</label>
+      <input id="approvalNewCount" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 5">
+      <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveApprovalNew()">Save</button>
+    </div>
+  </div>`;
+  if(!inRange.length){ html+='<div class="rm-empty">No approvals given in this period yet.</div>'; }
+  else{
+    html+=inRange.map(a=>{
+      const due=a.pieces-(a.sold||0)-(a.returned||0);
+      const badge = due>0 ? `<span class="sc-due-badge">${due} due</span>` : `<span class="sc-done-badge">✓ Resolved</span>`;
+      return `<div class="inline-card ${due>0?'due':''}">
+        <div class="ic-head" onclick="this.parentElement.classList.toggle('open')">
+          <span><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">${a.retailerName}</span><br><span class="sc-date">${a.by} · ${fmtD(new Date(a.dateGiven+'T00:00:00').getTime())}</span></span>
+          ${badge}
+        </div>
+        <div class="sc-stats" style="margin-top:6px"><b>${a.pieces}</b> given · <b>${a.sold||0}</b> sold · <b>${a.returned||0}</b> returned</div>
+        ${due>0?`<div class="inline-form">
+          <label>Pieces sold (this update)</label>
+          <input id="aprSold_${a.id}" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
+          <label>Pieces returned (this update)</label>
+          <input id="aprReturned_${a.id}" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
+          <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveApprovalResolve('${a.id}')">Save</button>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('stockBody').innerHTML=html;
+  wireApprovalSearch();
+}
+function wireApprovalSearch(){
+  const input=document.getElementById('approvalRetailerSearch');
+  if(!input) return;
+  input.addEventListener('input',e=>{
+    const q=e.target.value.trim().toLowerCase();
+    const box=document.getElementById('approvalSuggest');
+    if(q.length<2){ box.classList.remove('show'); return; }
+    const matches=allStores().filter(s=>!disabled[s.id] && storeSearchText(s).includes(q)).slice(0,8);
+    box.innerHTML = matches.length
+      ? matches.map(s=>`<div class="sug" data-id="${s.id}"><span class="sn">${s.n}</span><span class="sa">${s.a}</span></div>`).join('')
+      : '<div class="none">No match — you can still type a name and save directly</div>';
+    box.classList.add('show');
+    box.querySelectorAll('.sug').forEach(el=>{
+      el.onclick=(ev)=>{
+        ev.stopPropagation();
+        const s=allStores().find(x=>x.id===el.dataset.id); if(!s) return;
+        approvalRetailerChosen=s;
+        input.value=s.n;
+        box.classList.remove('show');
+      };
+    });
+  });
+}
+window.saveApprovalNew=function(){
+  const input=document.getElementById('approvalRetailerSearch');
+  const typedName=input.value.trim();
+  const retailerName = (approvalRetailerChosen && approvalRetailerChosen.n===typedName) ? approvalRetailerChosen.n : typedName;
+  if(!retailerName){ alert('Please enter or select a retailer.'); return; }
+  const countRaw=document.getElementById('approvalNewCount').value;
+  if(!countRaw || +countRaw<1){ alert('Please enter how many pieces.'); return; }
+  const payload={ by:stockRpWho||session.name, foruid:session.uid, retailerName:retailerName, pieces:+countRaw, sold:0, returned:0, dateGiven:todayStr(), ts:firebase.firestore.FieldValue.serverTimestamp() };
+  if(approvalRetailerChosen && approvalRetailerChosen.n===retailerName) payload.retailerId=approvalRetailerChosen.id;
+  db.collection(COL_APPROVAL).add(payload)
+    .then(()=>{ approvalRetailerChosen=null; })
+    .catch(e=>alert('Could not save — '+e.message));
+};
+window.saveApprovalResolve=function(id){
+  const a=approvals.find(x=>x.id===id); if(!a) return;
+  const soldNow=+document.getElementById('aprSold_'+id).value||0;
+  const returnedNow=+document.getElementById('aprReturned_'+id).value||0;
+  if(soldNow<1 && returnedNow<1){ alert('Enter at least one of sold or returned.'); return; }
+  const due=a.pieces-(a.sold||0)-(a.returned||0);
+  if(soldNow+returnedNow>due){ alert('That\'s more than the '+due+' pieces still due — please check the numbers.'); return; }
+  db.collection(COL_APPROVAL).doc(id).update({
+    sold: firebase.firestore.FieldValue.increment(soldNow),
+    returned: firebase.firestore.FieldValue.increment(returnedNow)
+  }).catch(e=>alert('Could not save — '+e.message));
+};
+
+/* ---- Repair: inline send + inline resolve ---- */
+function drawRepairTab(cutoff,upperCutoff,canSeeAll){
+  const inRange=repairs.filter(r=>{
+    const ms=new Date(r.dateSent+'T00:00:00').getTime();
+    return ms>=cutoff && ms<=upperCutoff && (!stockRpWho || r.by===stockRpWho);
+  }).sort((a,b)=>b.dateSent.localeCompare(a.dateSent));
+  const totalSent=inRange.reduce((s,r)=>s+r.pieces,0);
+  const totalReturned=inRange.reduce((s,r)=>s+(r.returned||0),0);
+  const totalDue=inRange.reduce((s,r)=>s+(r.pieces-(r.returned||0)),0);
+  let html=`<div class="stat-row">
+    <div class="stat-box"><span class="sv">${totalSent}</span><span class="sl">Sent</span></div>
+    <div class="stat-box"><span class="sv">${totalReturned}</span><span class="sl">Returned</span></div>
+    <div class="stat-box ${totalDue>0?'warn':''}"><span class="sv">${totalDue}</span><span class="sl">Due</span></div>
+  </div>`;
+  html+=`<div class="inline-card" id="repairNewCard">
+    <div class="ic-head" onclick="this.parentElement.classList.toggle('open')"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">+ Send pieces for repair</span><span class="ledger-edit">tap to open</span></div>
+    <div class="inline-form">
+      <label>Pieces sent</label>
+      <input id="repairNewCount" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 3">
+      <label>Remarks</label>
+      <input id="repairNewRemarks" placeholder="e.g. Chain link broken, sent to Ramesh goldsmith">
+      <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveRepairNew()">Save</button>
+    </div>
+  </div>`;
+  if(!inRange.length){ html+='<div class="rm-empty">No pieces sent for repair in this period yet.</div>'; }
+  else{
+    html+=inRange.map(r=>{
+      const due=r.pieces-(r.returned||0);
+      const badge = due>0 ? `<span class="sc-due-badge">${due} due</span>` : `<span class="sc-done-badge">✓ Complete</span>`;
+      return `<div class="inline-card ${due>0?'due':''}">
+        <div class="ic-head" onclick="this.parentElement.classList.toggle('open')">
+          <span><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">${r.by}</span><br><span class="sc-date">${fmtD(new Date(r.dateSent+'T00:00:00').getTime())}</span></span>
+          ${badge}
+        </div>
+        <div class="sc-stats" style="margin-top:6px"><b>${r.pieces}</b> sent · <b>${r.returned||0}</b> returned so far</div>
+        ${r.remarks?`<div class="sc-stats" style="font-style:italic">"${r.remarks}"</div>`:''}
+        ${due>0?`<div class="inline-form">
+          <label>Pieces returned now</label>
+          <input id="repReturned_${r.id}" type="number" inputmode="numeric" min="1" step="1" placeholder="0">
+          <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveRepairResolve('${r.id}')">Save</button>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('stockBody').innerHTML=html;
+}
+window.saveRepairNew=function(){
+  const countRaw=document.getElementById('repairNewCount').value;
+  if(!countRaw || +countRaw<1){ alert('Please enter how many pieces.'); return; }
+  const remarks=document.getElementById('repairNewRemarks').value.trim();
+  const payload={ by:stockRpWho||session.name, foruid:session.uid, pieces:+countRaw, returned:0, dateSent:todayStr(), ts:firebase.firestore.FieldValue.serverTimestamp() };
+  if(remarks) payload.remarks=remarks;
+  db.collection(COL_REPAIR).add(payload)
+    .then(()=>{ document.getElementById('repairNewRemarks').value=''; })
+    .catch(e=>alert('Could not save — '+e.message));
+};
+window.saveRepairResolve=function(id){
+  const r=repairs.find(x=>x.id===id); if(!r) return;
+  const returnedNow=+document.getElementById('repReturned_'+id).value||0;
+  const due=r.pieces-(r.returned||0);
+  if(returnedNow<1){ alert('Please enter how many pieces came back.'); return; }
+  if(returnedNow>due){ alert('That\'s more than the '+due+' pieces still due — please check the number.'); return; }
+  db.collection(COL_REPAIR).doc(id).update({ returned: firebase.firestore.FieldValue.increment(returnedNow) })
+    .catch(e=>alert('Could not save — '+e.message));
+};
+
+function getStockExportRows(){
+  const {cutoff,upperCutoff}=stockCutoffs();
+  if(stockActiveTab==='daily'){
+    const people = stockRpWho ? [stockRpWho] : [...new Set(carryEntries.map(c=>c.by))].filter(Boolean);
+    let rows=[];
+    people.forEach(p=>{
+      computeLedgerForPerson(p).forEach(r=>{
+        const catLine=Object.entries(r.cats).map(([c,n])=>`${n} ${c}`).join(', ');
+        const soldCatLine=Object.entries(r.soldCats).map(([c,n])=>`${n} ${c}`).join(', ');
+        rows.push({'Salesperson':p,'Date':r.date,'Opening':r.opening,'Added':r.additions,'Added Categories':catLine,'Sold':r.sales,'Sold Categories':soldCatLine,'EOD':r.eod});
+      });
+    });
+    return rows;
+  }else if(stockActiveTab==='approval'){
+    return approvals.filter(a=>{
+      const ms=new Date(a.dateGiven+'T00:00:00').getTime();
+      return ms>=cutoff && ms<=upperCutoff && (!stockRpWho||a.by===stockRpWho);
+    }).map(a=>({'Salesperson':a.by,'Retailer':a.retailerName,'Date Given':a.dateGiven,'Pieces Given':a.pieces,'Sold':a.sold||0,'Returned':a.returned||0,'Due':a.pieces-(a.sold||0)-(a.returned||0)}));
+  }else{
+    return repairs.filter(r=>{
+      const ms=new Date(r.dateSent+'T00:00:00').getTime();
+      return ms>=cutoff && ms<=upperCutoff && (!stockRpWho||r.by===stockRpWho);
+    }).map(r=>({'Salesperson':r.by,'Date Sent':r.dateSent,'Pieces Sent':r.pieces,'Returned':r.returned||0,'Due':r.pieces-(r.returned||0),'Remarks':r.remarks||''}));
+  }
+}
+window.exportStockExcel=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export stock data.'); return; }
+  const data=getStockExportRows();
+  if(!data.length){ alert('Nothing to export for the current view.'); return; }
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,stockActiveTab);
+  XLSX.writeFile(wb,'bharni_stock_'+stockActiveTab+'_'+todayStr()+'.xlsx');
+};
+window.exportStockPdf=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export stock data.'); return; }
+  const data=getStockExportRows();
+  if(!data.length){ alert('Nothing to export for the current view.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('Bharni Gems — Stock ('+stockActiveTab+')', 14, 15);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Generated '+new Date().toLocaleString('en-IN'), 14, 21);
+  const cols=Object.keys(data[0]);
+  doc.autoTable({
+    startY: 26,
+    head: [cols],
+    body: data.map(row=>cols.map(c=>row[c])),
+    styles:{fontSize:9, cellPadding:3},
+    headStyles:{fillColor:[28,23,18], textColor:[244,240,232]},
+    alternateRowStyles:{fillColor:[244,240,232]}
+  });
+  doc.save('bharni_stock_'+stockActiveTab+'_'+todayStr()+'.pdf');
+};
 function startReminderListener(){
   if(!db||!session) return;
   db.collection(COL_REMINDERS).where('foruid','==',session.uid).onSnapshot(s=>{
@@ -883,7 +1392,12 @@ function startReminderListener(){
     }
   }, e=>console.error('Reminder sync error:',e.message));
 }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){ return localDateStr(Date.now()); }
+function localDateStr(ms){
+  const d=new Date(ms);
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function updateReminderBadge(){
   const due=reminders.filter(r=>!r.done && r.date<=todayStr()).length;
   const badge=document.getElementById('rmBadge');
@@ -1001,6 +1515,7 @@ function popupHtml(s, added){
   const st=vStats[s.id];
   const tel=s.c?`<a class="pp-tel" href="tel:${String(s.c).replace(/[^0-9+]/g,'')}">${s.c}</a>`:'';
   const gmaps=`<a class="pp-tel" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=driving" target="_blank" rel="noopener">🧭 Navigate</a>`;
+  const nearbyLink=`<a class="pp-tel" href="#" onclick="showNearby('${s.id}');return false;">📍 Nearby</a>`;
   const stats=st?`<div class="pp-stats"><b>${st.count}</b> visit${st.count>1?'s':''} · last ${fmtD(st.last)} by ${st.lastBy||'—'}${st.lastRemark?`<div class="pp-remark">“${st.lastRemark}”</div>`:''}</div>`:`<div class="pp-stats" style="color:#a09680">Not visited yet</div>`;
   const offband=isOff?'<span class="pp-offband">Disabled</span><br>':'';
   const prospectLabel = (st && st.lastReason) ? `Prospect · ${st.count} visit${st.count>1?'s':''} · ✗ ${st.lastReason}`
@@ -1012,7 +1527,7 @@ function popupHtml(s, added){
   const checkin=isOff?'':`<button class="pp-checkin" onclick="openCheckin('${s.id}')">✓ Check in</button>`;
   const adminRow = editLink ? `<br>${editLink}` : '';
   const zk = effectiveZone(s);
-  return `${offband}${prospectBand}<div class="pp-name">${s.n}</div><div class="pp-area" style="color:${zColor(zk)}">${s.a} — ${zName(zk)}</div>${stats}${tel}${gmaps}${checkin}${adminRow}${by}<div style="color:#888;font-size:11px;margin-top:4px">${s.ad||''}</div>`;
+  return `${offband}${prospectBand}<div class="pp-name">${s.n}</div><div class="pp-area" style="color:${zColor(zk)}">${s.a} — ${zName(zk)}</div>${stats}${tel}${gmaps}${nearbyLink}${checkin}${adminRow}${by}<div style="color:#888;font-size:11px;margin-top:4px">${s.ad||''}</div>`;
 }
 let overrides={};
 function allStores(){
@@ -1043,12 +1558,9 @@ function isProspect(s){ return !!(s.live && s.saleStatus!=='sold'); }
 function computeTodayCheckins(){
   if(!session) return 0;
   const day=todayStr();
-  return visits.filter(v=>v.by===session.name && v.ts && v.ts.toMillis && new Date(v.ts.toMillis()).toISOString().slice(0,10)===day).length;
+  return visits.filter(v=>v.by===session.name && v.ts && v.ts.toMillis && localDateStr(v.ts.toMillis())===day).length;
 }
 const prospectIcon=L.divIcon({className:'',html:'<div class="prospect-badge"></div>',iconSize:[16,16],iconAnchor:[8,8]});
-const NEIGHBOR_RADIUS_METERS = 8000; // selecting a store reveals others within ~8km, midpoint of the 5-10km range requested
-let selectedStoreId=null;
-let isRendering=false;
 function storeSearchText(s){
   const zk=effectiveZone(s);
   let cityHint='';
@@ -1057,12 +1569,21 @@ function storeSearchText(s){
   else if(zk===12) cityHint='bengaluru bangalore kolar';
   return (s.n+' '+s.a+' '+(s.ad||'')+' '+(s.state||s.st||'')+' '+(s.district||'')+' '+cityHint+' '+zName(zk)).toLowerCase();
 }
+const NEARBY_RADIUS_METERS = 8000; // ~8km, midpoint of the 5-10km range requested
+let nearbyCenterId=null;
+window.showNearby=function(id){
+  nearbyCenterId=id;
+  render();
+};
+window.clearNearby=function(){
+  nearbyCenterId=null;
+  render();
+};
 function render(){
-  isRendering=true;
   markers.forEach(m=>map.removeLayer(m)); markers=[];
   const q=query.trim().toLowerCase(); let shown=0;
   const allS=allStores();
-  const selectedStore = selectedStoreId ? allS.find(s=>s.id===selectedStoreId) : null;
+  const nearbyCenter = nearbyCenterId ? allS.find(s=>s.id===nearbyCenterId) : null;
   allS.forEach(s=>{
     const isOff=!!disabled[s.id];
     const zk=effectiveZone(s);
@@ -1072,8 +1593,8 @@ function render(){
     }else{
       passes = isOff ? zoneOn[0] : zoneOn[zk];
     }
-    if(!passes && selectedStore && !isOff && s.lat!=null && s.lng!=null){
-      if(distMeters(s.lat,s.lng,selectedStore.lat,selectedStore.lng)<=NEIGHBOR_RADIUS_METERS) passes=true;
+    if(!passes && nearbyCenter && !isOff && s.lat!=null && s.lng!=null){
+      if(distMeters(s.lat,s.lng,nearbyCenter.lat,nearbyCenter.lng)<=NEARBY_RADIUS_METERS) passes=true;
     }
     if(!passes) return;
     const visited=vStats[s.id]&&vStats[s.id].last>Date.now()-30*864e5;
@@ -1090,21 +1611,14 @@ function render(){
         dashArray:isOff?'2,3':null
       }).bindPopup(()=>popupHtml(s,!!s.live));
     }
-    m.on('popupopen',()=>{ if(selectedStoreId!==s.id){ selectedStoreId=s.id; setTimeout(render,0); } });
-    m.on('popupclose',()=>{ if(selectedStoreId===s.id && !isRendering){ selectedStoreId=null; render(); } });
     m._s=s; m.addTo(map); markers.push(m); shown++;
   });
-  if(selectedStoreId){
-    const reopen=markers.find(mk=>mk._s && mk._s.id===selectedStoreId);
-    if(reopen) reopen.openPopup();
-  }
-  isRendering=false;
   const todayCount=computeTodayCheckins();
   let contextLine='';
   if(q){
     contextLine=`<b>${shown}</b> stores matching "${query.trim()}"`;
-  }else if(selectedStore){
-    contextLine=`<b>${shown}</b> stores shown — including others within 8km of ${selectedStore.n}`;
+  }else if(nearbyCenter){
+    contextLine=`<b>${shown}</b> stores near ${nearbyCenter.n} <span style="text-decoration:underline;cursor:pointer" onclick="clearNearby()">· clear</span>`;
   }else{
     const activeKeys=Object.keys(zoneOn).filter(k=>zoneOn[k] && k!=='0' && k!=='9');
     if(activeKeys.length===1){ contextLine=`<b>${shown}</b> stores in ${zName(activeKeys[0]).split(' · ')[0]}`; }
@@ -1117,7 +1631,7 @@ function wireChip(ch){
   const z=parseZoneKey(ch.dataset.z);
   if(!zoneOn[z]) ch.classList.add('off');
   ch.onclick=()=>{
-    zoneOn[z]=!zoneOn[z]; ch.classList.toggle('off',!zoneOn[z]); render();
+    zoneOn[z]=!zoneOn[z]; ch.classList.toggle('off',!zoneOn[z]); nearbyCenterId=null; render();
     if(zoneOn[z]&&z!==0&&z!==9){ // fit to newly enabled group
       const pts=allStores().filter(s=>!disabled[s.id]&&(effectiveZone(s)===z)).map(s=>[s.lat,s.lng]);
       if(pts.length) map.fitBounds(pts,{padding:[30,30]});
@@ -1175,8 +1689,6 @@ function tripLabel(t){ return t.type + ' — ' + fmtD(new Date(t.startDate+'T00:
 document.getElementById('tripType').addEventListener('change',e=>{
   document.getElementById('tripTypeCustom').style.display = e.target.value==='__custom__' ? '' : 'none';
 });
-document.getElementById('tripBtn').onclick=()=>{ closeAllOverlays(); document.getElementById('tripsPanel').classList.add('open'); drawTrips(); };
-document.getElementById('tripsClose').onclick=()=>document.getElementById('tripsPanel').classList.remove('open');
 document.getElementById('tripReportClose').onclick=()=>document.getElementById('tripReportPanel').classList.remove('open');
 document.getElementById('tripReportExport').onclick=()=>exportTripVisits();
 document.getElementById('tripReportExportPdf').onclick=()=>exportTripVisitsPdf();
@@ -1188,7 +1700,7 @@ window.openNewTrip=function(){
   document.getElementById('tripTypeCustom').value=''; document.getElementById('tripTypeCustom').style.display='none';
   document.getElementById('tripStart').value=todayStr();
   document.getElementById('tripEnd').value='';
-  document.getElementById('tripsPanel').classList.remove('open'); // sheet sits below the panel's z-index, so hide it first
+  closeAllOverlays(); // sheet sits below the panel's z-index, so hide the report first
   document.getElementById('tripSheet').classList.add('open');
 };
 window.openEditTrip=function(id){
@@ -1202,12 +1714,13 @@ window.openEditTrip=function(id){
   document.getElementById('tripTypeCustom').value = known ? '' : t.type;
   document.getElementById('tripStart').value=t.startDate||'';
   document.getElementById('tripEnd').value=t.endDate||'';
-  document.getElementById('tripsPanel').classList.remove('open');
+  closeAllOverlays();
   document.getElementById('tripSheet').classList.add('open');
 };
 document.getElementById('tripCancel').onclick=()=>{
   document.getElementById('tripSheet').classList.remove('open');
-  document.getElementById('tripsPanel').classList.add('open'); drawTrips(); // return to the list, not the bare map
+  rpActiveTab='trips';
+  document.getElementById('report').classList.add('open'); drawReport(); // return to the Trips tab, not the bare map
 };
 document.getElementById('tripSave').onclick=()=>{
   const typeSel=document.getElementById('tripType').value;
@@ -1222,7 +1735,8 @@ document.getElementById('tripSave').onclick=()=>{
     : db.collection(COL_TRIPS).add(payload);
   task.then(()=>{
     document.getElementById('tripSheet').classList.remove('open');
-    document.getElementById('tripsPanel').classList.add('open'); drawTrips(); // land back on the list showing the change
+    rpActiveTab='trips';
+    document.getElementById('report').classList.add('open'); drawReport(); // land back on the Trips tab showing the change
   }).catch(e=>alert('Could not save trip — '+e.message));
 };
 function tripStats(tripId){
@@ -1236,32 +1750,50 @@ function updateTripBadge(){
   const b=document.getElementById('tripBadge');
   if(n>0){ b.textContent=n; b.style.display='inline-block'; } else b.style.display='none';
 }
-function drawTrips(){
-  const active=activeTrips().sort((a,b)=>b.startDate.localeCompare(a.startDate));
-  const past=trips.filter(t=>t.endDate).sort((a,b)=>b.startDate.localeCompare(a.startDate));
+function drawTripsTabBody(cutoff, upperCutoff, canSeeAllReports){
+  const filteredTrips = trips.filter(t=>{
+    const startMs = new Date(t.startDate+'T00:00:00').getTime();
+    if(startMs<cutoff || startMs>upperCutoff) return false;
+    if(!canSeeAllReports){
+      const involved = t.by===session.name || visits.some(v=>v.tripId===t.id && v.by===session.name);
+      if(!involved) return false;
+    }else if(rpWho){
+      const involved = t.by===rpWho || visits.some(v=>v.tripId===t.id && v.by===rpWho);
+      if(!involved) return false;
+    }
+    return true;
+  });
+  const active=filteredTrips.filter(t=>!t.endDate).sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  const past=filteredTrips.filter(t=>t.endDate).sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  const statsFor=(t)=>{
+    let tv=visits.filter(v=>v.tripId===t.id);
+    if(rpWho) tv=tv.filter(v=>v.by===rpWho); // narrow each trip's stats to the selected person's own contribution
+    const stores=new Set(tv.map(v=>v.sid)).size;
+    const pieces=tv.reduce((s,v)=>s+(v.pieces||0),0);
+    return {checkins:tv.length, stores, pieces};
+  };
   const card=(t,isActive)=>{
-    const st=tripStats(t.id);
+    const st=statsFor(t);
     return `<div class="trip-card ${isActive?'active':''}" onclick="openTripReport('${t.id}')">
       <div class="tc-top"><span class="tc-name">${t.type}${isActive?'<span class="tc-live">Live</span>':''}</span></div>
       <div class="tc-dates">${fmtD(new Date(t.startDate+'T00:00:00').getTime())}${t.endDate?' – '+fmtD(new Date(t.endDate+'T00:00:00').getTime()):' – ongoing'}</div>
-      <div class="tc-stats"><b>${st.checkins}</b> check-ins · <b>${st.stores}</b> stores · <b>${st.pieces}</b> pieces sold</div>
+      <div class="tc-stats"><b>${st.checkins}</b> check-ins · <b>${st.stores}</b> stores · <b>${st.pieces}</b> pieces sold${rpWho?' · '+rpWho:''}</div>
       <div class="tc-by">started by ${t.by||'—'}</div>
       <span class="tc-edit" onclick="event.stopPropagation();openEditTrip('${t.id}')">edit trip details</span>
     </div>`;
   };
-  let html = `<button class="btn" style="width:100%;margin-bottom:16px" onclick="openNewTrip()">+ Start a new trip</button>`;
-  html += `<div class="trip-section-title">Active (${active.length})</div>`;
+  let html = `<div class="trip-section-title">Active (${active.length})</div>`;
   html += active.length ? active.map(t=>card(t,true)).join('') : '<div class="rm-empty">No trip currently active.</div>';
   html += `<div class="trip-section-title">Past trips (${past.length})</div>`;
-  html += past.length ? past.map(t=>card(t,false)).join('') : '<div class="rm-empty">No past trips yet.</div>';
-  document.getElementById('tripsBody').innerHTML=html;
+  html += past.length ? past.map(t=>card(t,false)).join('') : '<div class="rm-empty">No past trips in this period.</div>';
+  document.getElementById('rpTripsBody').innerHTML=html;
 }
 window.openTripReport=function(id){
   const t=trips.find(x=>x.id===id); if(!t) return;
   currentTripReportId=id;
   document.getElementById('tripReportTitle').textContent=tripLabel(t);
-  document.getElementById('tripReportExport').style.display = (session && (session.role==='admin'||session.role==='manager')) ? '' : 'none';
-  document.getElementById('tripReportExportPdf').style.display = (session && (session.role==='admin'||session.role==='manager')) ? '' : 'none';
+  document.getElementById('tripReportExport').style.display = (session && session.role==='admin') ? '' : 'none';
+  document.getElementById('tripReportExportPdf').style.display = (session && session.role==='admin') ? '' : 'none';
   const tv=visits.filter(v=>v.tripId===id).sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0));
   const byArea={};
   tv.forEach(v=>{
@@ -1403,7 +1935,7 @@ document.getElementById('zSave').onclick=()=>{
 };
 const suggestBox=document.getElementById('suggest');
 document.getElementById('q').addEventListener('input',e=>{
-  query=e.target.value; render(); showSuggestions(query);
+  query=e.target.value; nearbyCenterId=null; render(); showSuggestions(query);
 });
 document.getElementById('q').addEventListener('focus',e=>{ if(e.target.value) showSuggestions(e.target.value); });
 document.addEventListener('click',e=>{
@@ -1442,7 +1974,7 @@ document.getElementById('fDistrict').addEventListener('blur',e=>{
   if(dz) document.getElementById('fZone').value=dz; // Hyderabad/Bengaluru stay manually picked, everyone else auto-matches by typed district
 });
 function resetAddForm(){
-  ['fName','fTel','fDistrict','fArea','fPin'].forEach(i=>document.getElementById(i).value='');
+  ['fName','fTel','fDistrict','fArea','fPin','fFullAddr'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('fState').value='Telangana';
   document.getElementById('fAreaStatus').textContent='';
 }
@@ -1576,8 +2108,10 @@ document.getElementById('fSave').onclick=()=>{
   const district=document.getElementById('fDistrict').value.trim();
   const state=document.getElementById('fState').value;
   const pin=document.getElementById('fPin').value.trim();
+  const fullAddr=document.getElementById('fFullAddr').value.trim();
   const area=document.getElementById('fArea').value.trim()||'—';
-  const addrParts=[district,state].filter(Boolean).join(', ')+(pin?' - '+pin:'');
+  const districtLine=[district,state].filter(Boolean).join(', ')+(pin?' - '+pin:'');
+  const addrParts=[fullAddr,districtLine].filter(Boolean).join(', ');
   const zone=parseZoneKey(document.getElementById('fZone').value);
   const payload={n:n,c:document.getElementById('fTel').value.trim(),a:area,z:zone,by:session.name,
     state:state,district:district,pincode:pin,
@@ -1695,6 +2229,7 @@ window.openCheckinWithStore=function(store){
   document.getElementById('ciReasonBox').style.display='none';
   document.getElementById('ciPieces').value='';
   document.getElementById('ciPiecesBox').style.display='none';
+  ciSelectedCategory='Rings';
   document.getElementById('ciStyle').value='';
   document.getElementById('ciSpecs').value='';
   document.getElementById('ciDelivery').value='';
@@ -1708,10 +2243,19 @@ window.openCheckin=function(id){
   const s=allStores().find(s=>s.id===id); if(!s)return;
   openCheckinWithStore(s);
 };
+let ciSelectedCategory='Rings';
+function renderCiCategoryChips(){
+  const box=document.getElementById('ciCategoryChips');
+  box.innerHTML=STOCK_CATEGORIES.map(c=>`<span class="cat-chip ${c===ciSelectedCategory?'on':''}" data-c="${c}">${c}</span>`).join('');
+  box.querySelectorAll('.cat-chip').forEach(ch=>{
+    ch.onclick=()=>{ ciSelectedCategory=ch.dataset.c; box.querySelectorAll('.cat-chip').forEach(x=>x.classList.toggle('on',x===ch)); };
+  });
+}
 document.getElementById('ciOutcome').addEventListener('change',e=>{
   document.getElementById('ciReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
   document.getElementById('ciPiecesBox').style.display = e.target.value==='stock_sold' ? '' : 'none';
   document.getElementById('ciOrderBox').style.display = e.target.value==='order_taken' ? '' : 'none';
+  if(e.target.value==='stock_sold') renderCiCategoryChips();
 });
 document.getElementById('ciCancel').onclick=()=>document.getElementById('ciSheet').classList.remove('open');
 
@@ -1732,12 +2276,22 @@ window.openEditVisit=function(id){
   document.getElementById('evReasonBox').style.display = outcomeVal==='not_sold' ? '' : 'none';
   document.getElementById('evPiecesBox').style.display = outcomeVal==='stock_sold' ? '' : 'none';
   document.getElementById('evOrderBox').style.display = outcomeVal==='order_taken' ? '' : 'none';
+  if(outcomeVal==='stock_sold'){ evSelectedCategory=editVisit.category||'Rings'; renderEvCategoryChips(); }
   document.getElementById('editVisitSheet').classList.add('open');
 };
+let evSelectedCategory='Rings';
+function renderEvCategoryChips(){
+  const box=document.getElementById('evCategoryChips');
+  box.innerHTML=STOCK_CATEGORIES.map(c=>`<span class="cat-chip ${c===evSelectedCategory?'on':''}" data-c="${c}">${c}</span>`).join('');
+  box.querySelectorAll('.cat-chip').forEach(ch=>{
+    ch.onclick=()=>{ evSelectedCategory=ch.dataset.c; box.querySelectorAll('.cat-chip').forEach(x=>x.classList.toggle('on',x===ch)); };
+  });
+}
 document.getElementById('evOutcome').addEventListener('change',e=>{
   document.getElementById('evReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
   document.getElementById('evPiecesBox').style.display = e.target.value==='stock_sold' ? '' : 'none';
   document.getElementById('evOrderBox').style.display = e.target.value==='order_taken' ? '' : 'none';
+  if(e.target.value==='stock_sold') renderEvCategoryChips();
 });
 document.getElementById('evCancel').onclick=()=>document.getElementById('editVisitSheet').classList.remove('open');
 document.getElementById('evSave').onclick=()=>{
@@ -1760,6 +2314,7 @@ document.getElementById('evSave').onclick=()=>{
   };
   patch.reason = outcome==='not_sold' ? reason : firebase.firestore.FieldValue.delete();
   patch.pieces = outcome==='stock_sold' ? +piecesRaw : firebase.firestore.FieldValue.delete();
+  patch.category = outcome==='stock_sold' ? evSelectedCategory : firebase.firestore.FieldValue.delete();
   if(outcome==='order_taken'){ patch.style=style; patch.specs=specs; patch.deliveryDate=delivery; }
   else{ patch.style=firebase.firestore.FieldValue.delete(); patch.specs=firebase.firestore.FieldValue.delete(); patch.deliveryDate=firebase.firestore.FieldValue.delete(); }
   db.collection(COL_VISITS).doc(editVisit.id).update(patch)
@@ -1787,7 +2342,7 @@ document.getElementById('ciSave').onclick=()=>{
     outcome:outcome,
     ts:firebase.firestore.FieldValue.serverTimestamp()};
   if(outcome==='not_sold') doc.reason=reason;
-  if(outcome==='stock_sold') doc.pieces=+piecesRaw;
+  if(outcome==='stock_sold'){ doc.pieces=+piecesRaw; doc.category=ciSelectedCategory; }
   if(outcome==='order_taken'){ doc.style=style; doc.specs=specs; doc.deliveryDate=delivery; }
   const tripId=document.getElementById('ciTrip').value;
   if(tripId) doc.tripId=tripId;
@@ -1824,9 +2379,12 @@ document.getElementById('ciSave').onclick=()=>{
 document.getElementById('rpBtn').onclick=()=>{
   closeAllOverlays();
   if(session.role!=='admin'&&session.role!=='manager') rpWho=session.name;
-  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false;
+  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false; rpActiveTab='visits'; rpShowCategories=false;
   document.getElementById('report').classList.add('open');drawReport();
 };
+document.getElementById('rpTabVisits').onclick=()=>{ rpActiveTab='visits'; drawReport(); };
+document.getElementById('rpTabTrips').onclick=()=>{ rpActiveTab='trips'; drawReport(); };
+document.getElementById('rpNewTripBtn').onclick=()=>openNewTrip();
 document.getElementById('rpSearch').addEventListener('input',e=>{ rpQuery=e.target.value; drawReport(); });
 document.getElementById('pillCustom').onclick=()=>{
   rpCustomRange=!rpCustomRange;
@@ -1834,7 +2392,7 @@ document.getElementById('pillCustom').onclick=()=>{
     document.querySelectorAll('#periodPills .pill[data-d]').forEach(p=>p.classList.remove('on'));
     if(!document.getElementById('rpFromDate').value){
       const d=new Date(); d.setDate(d.getDate()-7);
-      document.getElementById('rpFromDate').value=d.toISOString().slice(0,10);
+      document.getElementById('rpFromDate').value=localDateStr(d.getTime());
       document.getElementById('rpToDate').value=todayStr();
     }
   }
@@ -1844,8 +2402,8 @@ document.getElementById('rpFromDate').addEventListener('change',()=>drawReport()
 document.getElementById('rpToDate').addEventListener('change',()=>drawReport());
 document.getElementById('rpZoneSelect').addEventListener('change',e=>{ rpZoneFilter=e.target.value; drawReport(); });
 document.getElementById('rpClose').onclick=()=>document.getElementById('report').classList.remove('open');
-document.getElementById('rpExportTop').onclick=()=>exportVisits();
-document.getElementById('rpExportPdfTop').onclick=()=>exportVisitsPdf();
+document.getElementById('rpExportTop').onclick=()=>{ if(rpActiveTab==='trips') exportTripsTabExcel(); else exportVisits(); };
+document.getElementById('rpExportPdfTop').onclick=()=>{ if(rpActiveTab==='trips') exportTripsTabPdf(); else exportVisitsPdf(); };
 document.getElementById('periodPills').addEventListener('click',e=>{
   if(!e.target.dataset.d)return;
   rpCustomRange=false;
@@ -1859,6 +2417,17 @@ window.setRpSubFilter=function(key){
 function drawReport(){
   const canSeeAllReports = session && (session.role==='admin' || session.role==='manager');
   if(!canSeeAllReports) rpWho=session.name; // sales can only ever see their own data
+  document.getElementById('rpTabVisits').classList.toggle('on', rpActiveTab==='visits');
+  document.getElementById('rpTabTrips').classList.toggle('on', rpActiveTab==='trips');
+  document.getElementById('rpBody').style.display = rpActiveTab==='visits' ? '' : 'none';
+  document.getElementById('rpTripsBody').style.display = rpActiveTab==='trips' ? '' : 'none';
+  document.getElementById('rpZoneSelect').style.display = rpActiveTab==='visits' ? '' : 'none';
+  document.getElementById('rpNewTripBtn').style.display = (rpActiveTab==='trips' && session) ? '' : 'none';
+  document.getElementById('rpTitle').innerHTML = rpActiveTab==='visits'
+    ? 'Visit Report<small>Area-wise coverage</small>'
+    : 'Trips<small>Active &amp; past coverage runs</small>';
+  document.getElementById('rpExportTop').style.display = (session && session.role==='admin') ? '' : 'none';
+  document.getElementById('rpExportPdfTop').style.display = (session && session.role==='admin') ? '' : 'none';
   document.getElementById('pillAll').textContent = canSeeAllReports ? 'All time' : 'Last 1 year';
   document.getElementById('pillCustom').classList.toggle('on', rpCustomRange);
   document.getElementById('customRangeBox').style.display = rpCustomRange ? '' : 'none';
@@ -1875,6 +2444,18 @@ function drawReport(){
     const oneYearAgo=Date.now()-365*864e5;
     if(cutoff===0 || cutoff<oneYearAgo) cutoff=oneYearAgo; // sales can never see beyond 1 year
   }
+  if(canSeeAllReports){
+    const who=[...new Set(visits.map(v=>v.by).filter(Boolean))].sort();
+    document.getElementById('whoPills').innerHTML=['<span class="pill '+(rpWho===''?'on':'')+'" data-w="">Everyone</span>']
+      .concat(who.map(w=>`<span class="pill ${rpWho===w?'on':''}" data-w="${w}">${w}</span>`)).join('');
+    document.querySelectorAll('#whoPills .pill').forEach(p=>p.onclick=()=>{rpWho=p.dataset.w;drawReport();});
+  }else{
+    document.getElementById('whoPills').innerHTML=`<span class="pill on" style="cursor:default">${session.name}</span>`;
+  }
+  if(rpActiveTab==='trips'){
+    drawTripsTabBody(cutoff, upperCutoff, canSeeAllReports);
+    return;
+  }
   const qterm=rpQuery.trim().toLowerCase();
   const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
@@ -1885,20 +2466,14 @@ function drawReport(){
     return true;
   });
   const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin).length : 0;
-  const ordersCountBase = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken').length;
+  const stockSoldCountBase = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold').length;
+  const ordersTakenCountBase = preFlagFilter.filter(v=>v.outcome==='order_taken').length;
   const piecesCountBase = preFlagFilter.reduce((s,v)=>s+(v.pieces||0),0);
   let inRange = preFlagFilter;
-  if(rpSubFilter==='orders') inRange = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken');
+  if(rpSubFilter==='stocksold') inRange = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold');
+  else if(rpSubFilter==='orderstaken') inRange = preFlagFilter.filter(v=>v.outcome==='order_taken');
   else if(rpSubFilter==='pieces') inRange = preFlagFilter.filter(v=>(v.pieces||0)>0);
   else if(rpSubFilter==='flagged' && canSeeAllReports) inRange = preFlagFilter.filter(v=>v.farCheckin);
-  if(canSeeAllReports){
-    const who=[...new Set(visits.map(v=>v.by).filter(Boolean))].sort();
-    document.getElementById('whoPills').innerHTML=['<span class="pill '+(rpWho===''?'on':'')+'" data-w="">Everyone</span>']
-      .concat(who.map(w=>`<span class="pill ${rpWho===w?'on':''}" data-w="${w}">${w}</span>`)).join('');
-    document.querySelectorAll('#whoPills .pill').forEach(p=>p.onclick=()=>{rpWho=p.dataset.w;drawReport();});
-  }else{
-    document.getElementById('whoPills').innerHTML=`<span class="pill on" style="cursor:default">${session.name} · your visits only · last 1 year</span>`;
-  }
   const byArea={}, storeTotals={}, areaOfStore={};
   allStores().forEach(s=>{
     areaOfStore[s.id]=s.a;
@@ -1920,11 +2495,13 @@ function drawReport(){
   let html='<div class="stat-row">'
     + `<div class="stat-box ${on('')}" onclick="setRpSubFilter('')" style="cursor:pointer"><span class="sv">${preFlagFilter.length}</span><span class="sl">Check-ins</span></div>`
     + `<div class="stat-box"><span class="sv">${visitedStores}/${activeStores}</span><span class="sl">Stores (${covPct}%)</span></div>`
-    + `<div class="stat-box ${on('orders')}" onclick="setRpSubFilter('orders')" style="cursor:pointer"><span class="sv">${ordersCountBase}</span><span class="sl">Orders placed</span></div>`
-    + `<div class="stat-box ${on('pieces')}" onclick="setRpSubFilter('pieces')" style="cursor:pointer"><span class="sv">${piecesCountBase}</span><span class="sl">Pieces sold</span></div>`
+    + `<div class="stat-box ${on('stocksold')}" onclick="setRpSubFilter('stocksold')" style="cursor:pointer"><span class="sv">${stockSoldCountBase}</span><span class="sl">Stock Sold</span></div>`
+    + `<div class="stat-box ${on('orderstaken')}" onclick="setRpSubFilter('orderstaken')" style="cursor:pointer"><span class="sv">${ordersTakenCountBase}</span><span class="sl">Orders Taken</span></div>`
+    + `<div class="stat-box ${on('pieces')}" onclick="setRpSubFilter('pieces')" style="cursor:pointer"><span class="sv">${piecesCountBase}</span><span class="sl">Pieces Sold</span></div>`
     + (canSeeAllReports ? `<div class="stat-box ${flaggedCount>0?'warn':''} ${on('flagged')}" onclick="setRpSubFilter('flagged')" style="cursor:pointer"><span class="sv">${flaggedCount}</span><span class="sl">Flagged</span></div>` : '')
     + '</div>';
-  if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='orders'?'Orders placed':rpSubFilter==='pieces'?'Pieces sold':'Flagged'}</b> — tap it again, or tap Check-ins, to see everything</div>`;
+  html += `<span class="pill ${rpShowCategories?'on':''}" onclick="rpShowCategories=!rpShowCategories;drawReport();" style="display:inline-block;margin-top:8px">Categories</span>`;
+  if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='stocksold'?'Stock Sold':rpSubFilter==='orderstaken'?'Orders Taken':rpSubFilter==='pieces'?'Pieces Sold':'Flagged'}</b></div>`;
   if(rpWho) html+=`<div class="rp-subline">Showing: <b style="font-family:'Bodoni Moda',serif">${rpWho}</b></div>`;
   if(!areas.length) html+='<div style="color:#8a8272;font-size:13px">No check-ins in this period yet. Open a store pin on the map and tap “Check in”.</div>';
   areas.forEach(([a,g])=>{
@@ -1935,7 +2512,8 @@ function drawReport(){
         const editTag = (canSeeAllReports && v.editedBy) ? ` · <span style="color:var(--muted);font-style:italic">edited by ${v.editedBy}</span>` : '';
         const editLink = canSeeAllReports ? ` · <span class="pp-toggle" style="font-size:10px" onclick="openEditVisit('${v.id}')">✎ edit</span>` : '';
         const om=outcomeMeta(v);
-        const outcomeTag = om.tag ? ` · ${om.tag}` : '';
+        const catTag = (rpShowCategories && v.category) ? ` · <span style="color:var(--gold)">${v.category}</span>` : '';
+        const outcomeTag = om.tag ? ` · ${om.tag}${catTag}` : '';
         return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}${editTag}${editLink}</div></div>`;
       }).join('');
       const storePieces = st.log.reduce((sum,v)=>sum+(v.pieces||0),0);
@@ -1953,19 +2531,17 @@ function drawReport(){
       <div class="area-progress"><div class="area-progress-fill" style="width:${covPct}%"></div></div>
       <div class="store-rows">${stRows}</div></div>`;
   });
-  document.getElementById('rpExportTop').style.display = canSeeAllReports ? '' : 'none';
-  document.getElementById('rpExportPdfTop').style.display = canSeeAllReports ? '' : 'none';
   document.getElementById('rpBody').innerHTML=html;
 }
 window.exportTripVisitsPdf=function(){
-  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export trip data.'); return; }
+  if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
   if(!currentTripReportId) return;
   const t=trips.find(x=>x.id===currentTripReportId);
   const rows=visits.filter(v=>v.tripId===currentTripReportId);
   buildPdfFromVisits(rows, 'Bharni Gems — '+(t?tripLabel(t):'Trip'), 'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.pdf');
 };
 window.exportTripVisits=function(){
-  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export trip data.'); return; }
+  if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
   if(!currentTripReportId) return;
   const t=trips.find(x=>x.id===currentTripReportId);
   const rows=visits.filter(v=>v.tripId===currentTripReportId);
@@ -2004,11 +2580,64 @@ function getFilteredVisitsForExport(){
     if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     if(rpSubFilter==='flagged' && !v.farCheckin) return false;
-    if(rpSubFilter==='orders' && !(v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken')) return false;
+    if(rpSubFilter==='stocksold' && !(v.outcome==='sold'||v.outcome==='stock_sold')) return false;
+    if(rpSubFilter==='orderstaken' && v.outcome!=='order_taken') return false;
     if(rpSubFilter==='pieces' && !((v.pieces||0)>0)) return false;
     return true;
   });
 }
+function getFilteredTripVisitsForExport(){
+  const canSeeAllReports = session && (session.role==='admin' || session.role==='manager');
+  let cutoff, upperCutoff=Date.now()+864e5;
+  if(rpCustomRange){
+    const fromVal=document.getElementById('rpFromDate').value;
+    const toVal=document.getElementById('rpToDate').value;
+    cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
+    upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
+  }else{
+    cutoff = rpDays?Date.now()-rpDays*864e5:0;
+  }
+  const filteredTrips = trips.filter(t=>{
+    const startMs=new Date(t.startDate+'T00:00:00').getTime();
+    if(startMs<cutoff || startMs>upperCutoff) return false;
+    if(!canSeeAllReports){
+      const involved = t.by===session.name || visits.some(v=>v.tripId===t.id && v.by===session.name);
+      if(!involved) return false;
+    }else if(rpWho){
+      const involved = t.by===rpWho || visits.some(v=>v.tripId===t.id && v.by===rpWho);
+      if(!involved) return false;
+    }
+    return true;
+  });
+  const tripIds=new Set(filteredTrips.map(t=>t.id));
+  return visits.filter(v=>v.tripId && tripIds.has(v.tripId) && (!rpWho || v.by===rpWho));
+}
+window.exportTripsTabExcel=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
+  const rows=getFilteredTripVisitsForExport();
+  const data=rows.map(v=>{
+    const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
+    const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
+    const trip=trips.find(t2=>t2.id===v.tripId);
+    return {
+      'Trip': trip?tripLabel(trip):'', 'Date': t?t.toLocaleDateString('en-IN'):'', 'Time': t?t.toLocaleTimeString('en-IN'):'',
+      'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
+      'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
+      'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
+      'Remarks': v.r||''
+    };
+  });
+  if(!data.length){ alert('Nothing to export for the current view.'); return; }
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:26},{wch:11},{wch:9},{wch:26},{wch:18},{wch:22},{wch:14},{wch:12},{wch:24},{wch:9},{wch:22},{wch:30},{wch:14},{wch:30}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Trips');
+  XLSX.writeFile(wb,'bharni_trips_'+todayStr()+'.xlsx');
+};
+window.exportTripsTabPdf=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
+  buildPdfFromVisits(getFilteredTripVisitsForExport(), 'Bharni Gems — Trips', 'bharni_trips_'+todayStr()+'.pdf');
+};
 function buildPdfFromVisits(rows, title, filename){
   if(!rows.length){ alert('Nothing to export for the current view.'); return; }
   const { jsPDF } = window.jspdf;
@@ -2036,11 +2665,11 @@ function buildPdfFromVisits(rows, title, filename){
   doc.save(filename);
 }
 window.exportVisitsPdf=function(){
-  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export the visit report.'); return; }
+  if(!session||session.role!=='admin'){ alert('Only admins can export the visit report.'); return; }
   buildPdfFromVisits(getFilteredVisitsForExport(), 'Bharni Gems — Visit Report', 'bharni_visits_'+todayStr()+'.pdf');
 };
 window.exportVisits=function(){
-  if(!session||(session.role!=='admin'&&session.role!=='manager')){ alert('Only admins and managers can export the visit report.'); return; }
+  if(!session||session.role!=='admin'){ alert('Only admins can export the visit report.'); return; }
   const rows=getFilteredVisitsForExport();
   const data=rows.map(v=>{
     const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
@@ -2071,8 +2700,7 @@ try{
     e=>alert('Retailer sync error: '+e.message));
   db.collection(COL_VISITS).onSnapshot(s=>{visits=s.docs.map(d=>Object.assign({id:d.id},d.data()));buildStats();render();
     if(document.getElementById('report').classList.contains('open'))drawReport();
-    updateTripBadge();
-    if(document.getElementById('tripsPanel').classList.contains('open'))drawTrips();},
+    updateTripBadge();},
     e=>alert('Visit sync error: '+e.message));
   db.collection(COL_DISABLED).onSnapshot(s=>{disabled={};s.docs.forEach(d=>disabled[d.id]=d.data());render();
     if(document.getElementById('report').classList.contains('open'))drawReport();},
@@ -2086,12 +2714,24 @@ try{
   db.collection(COL_TRIPS).onSnapshot(s=>{
     trips=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     updateTripBadge(); populateCheckinTripSelect();
-    if(document.getElementById('tripsPanel').classList.contains('open')) drawTrips();
+    if(document.getElementById('report').classList.contains('open')) drawReport();
     if(document.getElementById('tripReportPanel').classList.contains('open')){
       const openTitle=document.getElementById('tripReportTitle').textContent;
       const t=trips.find(x=>tripLabel(x)===openTitle); if(t) openTripReport(t.id);
     }
   }, e=>alert('Trips sync error: '+e.message));
+  db.collection(COL_CARRY).onSnapshot(s=>{
+    carryEntries=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
+  }, e=>alert('Stock sync error: '+e.message));
+  db.collection(COL_APPROVAL).onSnapshot(s=>{
+    approvals=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
+  }, e=>alert('Approval sync error: '+e.message));
+  db.collection(COL_REPAIR).onSnapshot(s=>{
+    repairs=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
+  }, e=>alert('Repair sync error: '+e.message));
 
   auth.onAuthStateChanged(user=>{
     if(!user){ session=null; return; }
