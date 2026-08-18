@@ -386,7 +386,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v48.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v49.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -785,6 +785,11 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
         <button class="btn" id="excelApplyBtn" style="width:100%;margin-top:10px">Apply these changes</button>
       </div>
     </div>
+    <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--cream-4)">
+      <div class="admin-label" style="color:var(--gold)">Security setup — run once</div>
+      <button class="btn ghost" id="backfillBtn" style="width:100%">Link past check-ins to their owner</button>
+      <div id="backfillResult" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
+    </div>
   </div>
   <div class="sheet-btns" style="margin-top:16px">
     <button class="btn ghost" id="excelCancel">Close</button>
@@ -883,6 +888,7 @@ const map = L.map('map').setView([16.6,79.2],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
 
 let db=null, auth=null, liveStores=[], visits=[], markers=[], disabled={};
+let activeListeners=[];
 let zoneOn={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false,0:false,10:false,11:false,12:false}, query='';
 let vStats={}, rpDays=7, rpWho='', rpQuery='', rpSubFilter='', rpZoneFilter='', rpCustomRange=false, rpActiveTab='visits', rpShowCategories=false;
 let trips=[], editingTripId=null, currentTripReportId=null;
@@ -1921,6 +1927,45 @@ document.getElementById('excelApplyBtn').onclick=()=>{
   runChunk(0);
 };
 
+document.getElementById('backfillBtn').onclick=()=>{
+  if(!session||session.role!=='admin'){ alert('Only admins can run this.'); return; }
+  if(!confirm('This reads every past check-in and links it to its owner\'s account, one time. Safe to run more than once. Continue?')) return;
+  const btn=document.getElementById('backfillBtn'); btn.disabled=true; btn.textContent='Working…';
+  const resultBox=document.getElementById('backfillResult');
+  resultBox.textContent='Reading profiles…';
+  db.collection(COL_PROFILES).get().then(profileSnap=>{
+    const nameToUid={};
+    profileSnap.forEach(d=>{ const nm=d.data().name; if(nm) nameToUid[nm]=d.id; });
+    resultBox.textContent='Reading past check-ins…';
+    return db.collection(COL_VISITS).get().then(visitSnap=>({visitSnap,nameToUid}));
+  }).then(({visitSnap,nameToUid})=>{
+    const toFix=[];
+    visitSnap.forEach(d=>{
+      const v=d.data();
+      if(!v.foruid && v.by && nameToUid[v.by]) toFix.push({id:d.id, foruid:nameToUid[v.by]});
+    });
+    const unmatched=visitSnap.docs.filter(d=>!d.data().foruid && !(d.data().by && nameToUid[d.data().by])).length;
+    if(!toFix.length){
+      resultBox.textContent='Nothing to fix — every check-in is already linked, or none matched a known name ('+unmatched+' unmatched).';
+      btn.disabled=false; btn.textContent='Link past check-ins to their owner';
+      return;
+    }
+    resultBox.textContent='Linking '+toFix.length+' check-ins…';
+    const chunks=[]; for(let i=0;i<toFix.length;i+=400) chunks.push(toFix.slice(i,i+400));
+    const runChunk=(idx)=>{
+      if(idx>=chunks.length){
+        resultBox.textContent='Done — linked '+toFix.length+' check-in(s) to their owner.'+(unmatched?' '+unmatched+' had no matching name and were left as-is (still fully visible to admin).':'');
+        btn.disabled=false; btn.textContent='Link past check-ins to their owner';
+        return;
+      }
+      const batch=db.batch();
+      chunks[idx].forEach(f=>batch.update(db.collection(COL_VISITS).doc(f.id), {foruid:f.foruid}));
+      batch.commit().then(()=>runChunk(idx+1)).catch(e=>{ resultBox.textContent='Stopped early — '+e.message; btn.disabled=false; btn.textContent='Link past check-ins to their owner'; });
+    };
+    runChunk(0);
+  }).catch(e=>{ resultBox.textContent='Could not run — '+e.message; btn.disabled=false; btn.textContent='Link past check-ins to their owner'; });
+};
+
 document.getElementById('newZoneBtn').onclick=()=>{
   document.getElementById('zName').value=''; document.getElementById('zColorPick').value='#7A5230';
   document.getElementById('zoneSheet').classList.add('open');
@@ -2337,7 +2382,7 @@ document.getElementById('ciSave').onclick=()=>{
     if(!delivery){ alert('Please enter the expected delivery date.'); return; }
   }
   const zk=effectiveZone(ciStore);
-  const doc={sid:ciStore.id,sn:ciStore.n,a:ciStore.a,z:zk,by:session.name,
+  const doc={sid:ciStore.id,sn:ciStore.n,a:ciStore.a,z:zk,by:session.name,foruid:session.uid,
     r:document.getElementById('ciRemarks').value.trim(),
     outcome:outcome,
     ts:firebase.firestore.FieldValue.serverTimestamp()};
@@ -2689,29 +2734,37 @@ window.exportVisits=function(){
   XLSX.writeFile(wb,'bharni_visits_'+todayStr()+'.xlsx');
 };
 
-populateReportZoneFilter();
-render();
-try{
-  if(firebaseConfig.projectId==='PASTE_HERE') throw new Error('Firebase config not filled — open the file and paste it at STEP 1.');
-  firebase.initializeApp(firebaseConfig);
-  db=firebase.firestore();
-  auth=firebase.auth();
-  db.collection(COL_RETAILERS).onSnapshot(s=>{liveStores=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();},
-    e=>alert('Retailer sync error: '+e.message));
-  db.collection(COL_VISITS).onSnapshot(s=>{visits=s.docs.map(d=>Object.assign({id:d.id},d.data()));buildStats();render();
+function detachAllListeners(){
+  activeListeners.forEach(fn=>{ try{ fn(); }catch(e){} });
+  activeListeners=[];
+}
+function attachDataListeners(){
+  detachAllListeners(); // never double-subscribe
+  const isAdmin = session.role==='admin';
+  const isAdminOrManager = session.role==='admin' || session.role==='manager';
+
+  activeListeners.push(db.collection(COL_RETAILERS).onSnapshot(s=>{liveStores=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();},
+    e=>alert('Retailer sync error: '+e.message)));
+
+  const visitsQuery = isAdminOrManager ? db.collection(COL_VISITS) : db.collection(COL_VISITS).where('foruid','==',session.uid);
+  activeListeners.push(visitsQuery.onSnapshot(s=>{visits=s.docs.map(d=>Object.assign({id:d.id},d.data()));buildStats();render();
     if(document.getElementById('report').classList.contains('open'))drawReport();
     updateTripBadge();},
-    e=>alert('Visit sync error: '+e.message));
-  db.collection(COL_DISABLED).onSnapshot(s=>{disabled={};s.docs.forEach(d=>disabled[d.id]=d.data());render();
+    e=>alert('Visit sync error: '+e.message)));
+
+  activeListeners.push(db.collection(COL_DISABLED).onSnapshot(s=>{disabled={};s.docs.forEach(d=>disabled[d.id]=d.data());render();
     if(document.getElementById('report').classList.contains('open'))drawReport();},
-    e=>alert('Disable-list sync error: '+e.message));
-  db.collection(COL_OVERRIDES).onSnapshot(s=>{overrides={};s.docs.forEach(d=>overrides[d.id]=d.data());render();},
-    e=>alert('Corrections sync error: '+e.message));
-  db.collection(COL_ZONES).onSnapshot(s=>{
+    e=>alert('Disable-list sync error: '+e.message)));
+
+  activeListeners.push(db.collection(COL_OVERRIDES).onSnapshot(s=>{overrides={};s.docs.forEach(d=>overrides[d.id]=d.data());render();},
+    e=>alert('Corrections sync error: '+e.message)));
+
+  activeListeners.push(db.collection(COL_ZONES).onSnapshot(s=>{
     customZones={}; s.docs.forEach(d=>customZones[d.id]=d.data());
     renderCustomChips(); refreshZoneDropdowns(); render();
-  }, e=>alert('Zones sync error: '+e.message));
-  db.collection(COL_TRIPS).onSnapshot(s=>{
+  }, e=>alert('Zones sync error: '+e.message)));
+
+  activeListeners.push(db.collection(COL_TRIPS).onSnapshot(s=>{
     trips=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     updateTripBadge(); populateCheckinTripSelect();
     if(document.getElementById('report').classList.contains('open')) drawReport();
@@ -2719,22 +2772,43 @@ try{
       const openTitle=document.getElementById('tripReportTitle').textContent;
       const t=trips.find(x=>tripLabel(x)===openTitle); if(t) openTripReport(t.id);
     }
-  }, e=>alert('Trips sync error: '+e.message));
-  db.collection(COL_CARRY).onSnapshot(s=>{
+  }, e=>alert('Trips sync error: '+e.message)));
+
+  const carryQuery = isAdmin ? db.collection(COL_CARRY) : db.collection(COL_CARRY).where('foruid','==',session.uid);
+  activeListeners.push(carryQuery.onSnapshot(s=>{
     carryEntries=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
-  }, e=>alert('Stock sync error: '+e.message));
-  db.collection(COL_APPROVAL).onSnapshot(s=>{
+  }, e=>alert('Stock sync error: '+e.message)));
+
+  const approvalQuery = isAdmin ? db.collection(COL_APPROVAL) : db.collection(COL_APPROVAL).where('foruid','==',session.uid);
+  activeListeners.push(approvalQuery.onSnapshot(s=>{
     approvals=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
-  }, e=>alert('Approval sync error: '+e.message));
-  db.collection(COL_REPAIR).onSnapshot(s=>{
+  }, e=>alert('Approval sync error: '+e.message)));
+
+  const repairQuery = isAdmin ? db.collection(COL_REPAIR) : db.collection(COL_REPAIR).where('foruid','==',session.uid);
+  activeListeners.push(repairQuery.onSnapshot(s=>{
     repairs=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
-  }, e=>alert('Repair sync error: '+e.message));
+  }, e=>alert('Repair sync error: '+e.message)));
+}
+
+populateReportZoneFilter();
+render();
+try{
+  if(firebaseConfig.projectId==='PASTE_HERE') throw new Error('Firebase config not filled — open the file and paste it at STEP 1.');
+  firebase.initializeApp(firebaseConfig);
+  db=firebase.firestore();
+  auth=firebase.auth();
 
   auth.onAuthStateChanged(user=>{
-    if(!user){ session=null; return; }
+    if(!user){
+      session=null;
+      detachAllListeners();
+      liveStores=[]; visits=[]; disabled={}; overrides={}; customZones={}; trips=[]; carryEntries=[]; approvals=[]; repairs=[];
+      render();
+      return;
+    }
     db.collection(COL_PROFILES).doc(user.uid).get().then(doc=>{
       if(!doc.exists){
         document.getElementById('loginErr').textContent='This account is signed in but not set up for the map yet. Ask your admin to add your profile.';
@@ -2744,6 +2818,7 @@ try{
       const d=doc.data();
       const fallbackName = (user.email||'').split('@')[0];
       enterApp({uid:user.uid,email:user.email,name:d.name||fallbackName,role:d.role||'sales'});
+      attachDataListeners();
     }).catch(e=>{ document.getElementById('loginErr').textContent='Could not load your profile — check internet.'; });
   });
 }catch(e){ document.getElementById('tally').innerHTML='<span id="live"></span>'+e.message; }
