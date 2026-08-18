@@ -386,7 +386,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v49.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v50.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -789,6 +789,11 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
       <div class="admin-label" style="color:var(--gold)">Security setup — run once</div>
       <button class="btn ghost" id="backfillBtn" style="width:100%">Link past check-ins to their owner</button>
       <div id="backfillResult" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
+    </div>
+    <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--z1)">
+      <div class="admin-label" style="color:var(--z1)">Danger zone — before going live</div>
+      <button class="btn" id="wipeTestDataBtn" style="width:100%;background:var(--z1)">Clear all check-in / stock / trip / reminder data</button>
+      <div id="wipeResult" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
     </div>
   </div>
   <div class="sheet-btns" style="margin-top:16px">
@@ -1964,6 +1969,41 @@ document.getElementById('backfillBtn').onclick=()=>{
     };
     runChunk(0);
   }).catch(e=>{ resultBox.textContent='Could not run — '+e.message; btn.disabled=false; btn.textContent='Link past check-ins to their owner'; });
+};
+
+document.getElementById('wipeTestDataBtn').onclick=()=>{
+  if(!session||session.role!=='admin'){ alert('Only admins can do this.'); return; }
+  if(!confirm('This PERMANENTLY deletes every check-in, marketing/stock entry, approval, repair, trip, and reminder in the database — for everyone, with no way to undo it. Retailers (the original list and anything added since) are NOT touched. Continue?')) return;
+  if(!confirm('Final confirmation — all activity data will be gone permanently. Proceed?')) return;
+  const btn=document.getElementById('wipeTestDataBtn'); btn.disabled=true; btn.textContent='Clearing…';
+  const resultBox=document.getElementById('wipeResult');
+  const collections=[
+    {name:'check-ins', col:COL_VISITS}, {name:'marketing/stock', col:COL_CARRY}, {name:'approvals', col:COL_APPROVAL},
+    {name:'repairs', col:COL_REPAIR}, {name:'trips', col:COL_TRIPS}, {name:'reminders', col:COL_REMINDERS}
+  ];
+  let totalDeleted=0;
+  function clearCollection(label,colName){
+    resultBox.textContent='Clearing '+label+'…';
+    return db.collection(colName).get().then(snap=>{
+      const docs=snap.docs;
+      const chunks=[]; for(let i=0;i<docs.length;i+=400) chunks.push(docs.slice(i,i+400));
+      let chain=Promise.resolve();
+      chunks.forEach(chunk=>{
+        chain=chain.then(()=>{
+          const batch=db.batch();
+          chunk.forEach(d=>batch.delete(d.ref));
+          return batch.commit();
+        });
+      });
+      return chain.then(()=>{ totalDeleted+=docs.length; });
+    });
+  }
+  let chain=Promise.resolve();
+  collections.forEach(c=>{ chain=chain.then(()=>clearCollection(c.name,c.col)); });
+  chain.then(()=>{
+    resultBox.textContent='Done — removed '+totalDeleted+' record(s) across check-ins, marketing/stock, approvals, repairs, trips, and reminders. Retailers were untouched. The app is clean and ready to start using.';
+    btn.disabled=false; btn.textContent='Clear all check-in / stock / trip / reminder data';
+  }).catch(e=>{ resultBox.textContent='Stopped partway through — '+e.message+'. Some collections may already be cleared; safe to run again.'; btn.disabled=false; btn.textContent='Clear all check-in / stock / trip / reminder data'; });
 };
 
 document.getElementById('newZoneBtn').onclick=()=>{
