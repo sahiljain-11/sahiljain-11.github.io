@@ -386,7 +386,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v53.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v54.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1029,6 +1029,26 @@ function drawStockPage(){
 }
 
 /* ---- Marketing: running ledger, opening carried forward automatically each day ---- */
+function computeCategoryBalances(person){
+  const bal={}; // {material:{category:count}}
+  carryEntries.filter(c=>c.by===person).forEach(e=>{
+    const mat=e.material||'Natural';
+    if(!bal[mat]) bal[mat]={};
+    bal[mat][e.category]=(bal[mat][e.category]||0)+(e.count||0);
+  });
+  visits.filter(v=>v.by===person && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0).forEach(v=>{
+    if(v.categoryBreakdown){
+      Object.entries(v.categoryBreakdown).forEach(([mat,cats])=>{
+        if(!bal[mat]) bal[mat]={};
+        Object.entries(cats).forEach(([cat,n])=>{ bal[mat][cat]=(bal[mat][cat]||0)-n; });
+      });
+    }else if(v.category){
+      if(!bal.Natural) bal.Natural={};
+      bal.Natural[v.category]=(bal.Natural[v.category]||0)-(v.pieces||0);
+    }
+  });
+  return bal;
+}
 function computeLedgerForPerson(person){
   const entries=carryEntries.filter(c=>c.by===person);
   const soldVisits=visits.filter(v=>v.by===person && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0);
@@ -1071,23 +1091,22 @@ function computeLedgerForPerson(person){
     return {date,opening,additions,sales,eod,matCats,soldMatCats,rawEntries};
   });
 }
-function mktCategoryGridHtml(prefix){
-  return STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="${prefix}_${c}" type="number" min="0" step="1" placeholder="0">`).join('');
-}
 function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   const body=document.getElementById('stockBody');
   const addCard = `<div class="inline-card" id="mktAddCard">
     <div class="ic-head" onclick="this.parentElement.classList.toggle('open')"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">+ Add pieces</span><span class="ledger-edit">tap to open</span></div>
     <div class="inline-form">
-      <div class="rp-filters" id="mktAddMaterialChips"></div>
-      <div class="edit-cat-grid" style="margin-top:10px">${mktCategoryGridHtml('mktAddQty')}</div>
+      <label>Natural</label>
+      <div class="edit-cat-grid">${categoryGridHtml('mktAddNat')}</div>
+      <label>LGD</label>
+      <div class="edit-cat-grid">${categoryGridHtml('mktAddLgd')}</div>
       <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveMarketingAdd()">Save</button>
     </div>
   </div>`;
   if(!mktSelectedPerson){
     const allPeople=[...new Set(carryEntries.map(c=>c.by))].filter(Boolean).sort();
     let html=addCard;
-    if(!allPeople.length){ html+='<div class="rm-empty">No stock logged yet.</div>'; body.innerHTML=html; renderMktAddMaterialChips(); return; }
+    if(!allPeople.length){ html+='<div class="rm-empty">No stock logged yet.</div>'; body.innerHTML=html; return; }
     html+=allPeople.map(p=>{
       const rows=computeLedgerForPerson(p);
       const latest=rows.length?rows[rows.length-1]:{eod:0};
@@ -1096,7 +1115,6 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
       </div>`;
     }).join('');
     body.innerHTML=html;
-    renderMktAddMaterialChips();
     return;
   }
   const allRows=computeLedgerForPerson(mktSelectedPerson);
@@ -1121,16 +1139,15 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
         const tag=e.adjustment?`<span style="color:var(--z1)"> — adjustment by ${e.adjustedBy}${e.note?': '+e.note:''}</span>`:'';
         return `<div class="v-item">${sign}${e.count} ${mat} ${e.category}${timeStr?' · '+timeStr:''}${tag}</div>`;
       }).join('') || '<div class="rm-empty">No entries.</div>';
+      const adjNatPrefix='adjNat_'+r.date, adjLgdPrefix='adjLgd_'+r.date;
       const adjustForm = canSeeAll ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--cream-4)">
-        <label>Material</label>
-        <select id="adjMat_${r.date}">${STOCK_MATERIALS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
-        <label>Category</label>
-        <select id="adjCat_${r.date}">${STOCK_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
-        <label>Adjustment (+ to add, - to reduce)</label>
-        <input id="adjCount_${r.date}" type="number" step="1" placeholder="e.g. -5">
-        <label>Reason (required)</label>
+        <label>Natural</label>
+        <div class="edit-cat-grid">${STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="${adjNatPrefix}_${c}" type="number" min="0" step="1" value="${(r.matCats.Natural&&r.matCats.Natural[c])||''}" placeholder="0">`).join('')}</div>
+        <label>LGD</label>
+        <div class="edit-cat-grid">${STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="${adjLgdPrefix}_${c}" type="number" min="0" step="1" value="${(r.matCats.LGD&&r.matCats.LGD[c])||''}" placeholder="0">`).join('')}</div>
+        <label>Reason for this correction (required)</label>
         <input id="adjNote_${r.date}" placeholder="e.g. Corrected miscount">
-        <button class="btn" style="width:100%;margin-top:8px" onclick="event.stopPropagation();saveMarketingAdjustment('${r.date}')">Save adjustment</button>
+        <button class="btn" style="width:100%;margin-top:8px" onclick="event.stopPropagation();saveMarketingAdjustment('${r.date}')">Save correction</button>
       </div>` : '';
       return `<div class="ledger-block">
         <div class="ledger-row ${isToday?'today':''}" onclick="this.parentElement.classList.toggle('editing')" style="cursor:pointer">
@@ -1148,50 +1165,64 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
     }).join('');
   }
   body.innerHTML=html;
-  renderMktAddMaterialChips();
-}
-let mktAddMaterial='Natural';
-function renderMktAddMaterialChips(){
-  const box=document.getElementById('mktAddMaterialChips');
-  if(!box) return;
-  box.innerHTML=STOCK_MATERIALS.map(m=>`<span class="cat-chip ${m===mktAddMaterial?'on':''}" data-m="${m}" style="flex:1;text-align:center">${m}</span>`).join('');
-  box.querySelectorAll('.cat-chip').forEach(ch=>{
-    ch.onclick=(e)=>{ e.stopPropagation(); mktAddMaterial=ch.dataset.m; box.querySelectorAll('.cat-chip').forEach(x=>x.classList.toggle('on',x===ch)); };
-  });
 }
 window.saveMarketingAdd=function(){
+  const natural=readCategoryGrid('mktAddNat'), lgd=readCategoryGrid('mktAddLgd');
+  const batch=db.batch();
+  let any=false;
+  Object.entries(natural).forEach(([cat,val])=>{
+    any=true;
+    batch.set(db.collection(COL_CARRY).doc(), {
+      by: session.name, foruid:session.uid, date:todayStr(), category:cat, material:'Natural', count:val,
+      ts:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  Object.entries(lgd).forEach(([cat,val])=>{
+    any=true;
+    batch.set(db.collection(COL_CARRY).doc(), {
+      by: session.name, foruid:session.uid, date:todayStr(), category:cat, material:'LGD', count:val,
+      ts:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  if(!any){ alert('Please enter at least one category count — Natural or LGD.'); return; }
+  batch.commit().then(()=>{
+    fillCategoryGrid('mktAddNat',{}); fillCategoryGrid('mktAddLgd',{});
+  }).catch(e=>alert('Could not save — '+e.message));
+};
+window.saveMarketingAdjustment=function(date){
+  if(!session||session.role!=='admin'){ alert('Only admins can make corrections.'); return; }
+  const note=document.getElementById('adjNote_'+date).value.trim();
+  if(!note){ alert('Please enter a reason for this correction — it stays visible in the history permanently.'); return; }
+  const person=mktSelectedPerson||session.name;
+  const newNatural=readCategoryGrid('adjNat_'+date), newLgd=readCategoryGrid('adjLgd_'+date);
+  const row=computeLedgerForPerson(person).find(r=>r.date===date);
+  const curNatural=(row&&row.matCats.Natural)||{}, curLgd=(row&&row.matCats.LGD)||{};
   const batch=db.batch();
   let any=false;
   STOCK_CATEGORIES.forEach(cat=>{
-    const el=document.getElementById('mktAddQty_'+cat);
-    const val=el?(+el.value||0):0;
-    if(val>0){
+    const delta=(newNatural[cat]||0)-(curNatural[cat]||0);
+    if(delta!==0){
       any=true;
       batch.set(db.collection(COL_CARRY).doc(), {
-        by: session.name, foruid:session.uid, date:todayStr(), category:cat, material:mktAddMaterial, count:val,
+        by:person, foruid:session.uid, date:date, category:cat, material:'Natural', count:delta,
+        adjustment:true, adjustedBy:session.name, note:note,
         ts:firebase.firestore.FieldValue.serverTimestamp()
       });
     }
   });
-  if(!any){ alert('Please enter at least one category count.'); return; }
-  batch.commit().then(()=>{
-    STOCK_CATEGORIES.forEach(cat=>{ const el=document.getElementById('mktAddQty_'+cat); if(el) el.value=''; });
-  }).catch(e=>alert('Could not save — '+e.message));
-};
-window.saveMarketingAdjustment=function(date){
-  if(!session||session.role!=='admin'){ alert('Only admins can make adjustments.'); return; }
-  const mat=document.getElementById('adjMat_'+date).value;
-  const cat=document.getElementById('adjCat_'+date).value;
-  const amt=+document.getElementById('adjCount_'+date).value;
-  const note=document.getElementById('adjNote_'+date).value.trim();
-  if(!amt){ alert('Please enter an adjustment amount (positive or negative).'); return; }
-  if(!note){ alert('Please enter a reason for this adjustment — it stays visible in the history permanently.'); return; }
-  const person=mktSelectedPerson||session.name;
-  db.collection(COL_CARRY).add({
-    by:person, foruid:session.uid, date:date, category:cat, material:mat, count:amt,
-    adjustment:true, adjustedBy:session.name, note:note,
-    ts:firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(e=>alert('Could not save — '+e.message));
+  STOCK_CATEGORIES.forEach(cat=>{
+    const delta=(newLgd[cat]||0)-(curLgd[cat]||0);
+    if(delta!==0){
+      any=true;
+      batch.set(db.collection(COL_CARRY).doc(), {
+        by:person, foruid:session.uid, date:date, category:cat, material:'LGD', count:delta,
+        adjustment:true, adjustedBy:session.name, note:note,
+        ts:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  });
+  if(!any){ alert('No changes detected — nothing to save.'); return; }
+  batch.commit().catch(e=>alert('Could not save — '+e.message));
 };
 
 
@@ -1838,6 +1869,7 @@ window.openTripReport=function(id){
   document.getElementById('tripReportTitle').textContent=tripLabel(t);
   document.getElementById('tripReportExport').style.display = (session && session.role==='admin') ? '' : 'none';
   document.getElementById('tripReportExportPdf').style.display = (session && session.role==='admin') ? '' : 'none';
+  const canSeeFlags = session && (session.role==='admin'||session.role==='manager');
   const tv=visits.filter(v=>v.tripId===id).sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0));
   const byArea={};
   tv.forEach(v=>{
@@ -1847,18 +1879,21 @@ window.openTripReport=function(id){
   const totalPieces=tv.reduce((s,v)=>s+(v.pieces||0),0);
   const totalStores=new Set(tv.map(v=>v.sid)).size;
   const soldCount=tv.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken').length;
+  const flaggedCount=canSeeFlags ? tv.filter(v=>v.farCheckin).length : 0;
   let html='<div class="stat-row">'
     + `<div class="stat-box"><span class="sv">${tv.length}</span><span class="sl">Check-ins</span></div>`
     + `<div class="stat-box"><span class="sv">${totalStores}</span><span class="sl">Stores covered</span></div>`
     + `<div class="stat-box"><span class="sv">${soldCount}</span><span class="sl">Orders placed</span></div>`
     + `<div class="stat-box"><span class="sv">${totalPieces}</span><span class="sl">Pieces sold</span></div>`
+    + (canSeeFlags ? `<div class="stat-box ${flaggedCount>0?'warn':''}"><span class="sv">${flaggedCount}</span><span class="sl">Flagged</span></div>` : '')
     + '</div>';
   if(!tv.length) html+='<div class="rm-empty">No check-ins logged against this trip yet.</div>';
   Object.entries(byArea).sort((a,b)=>b[1].n-a[1].n).forEach(([a,g])=>{
     const rows=g.log.map(v=>{
       const t2=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
       const om=outcomeMeta(v);
-      return `<div class="v-item">${v.sn} — ${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t2)} · ${v.by||'—'}${om.tag?' · '+om.tag:''}</div></div>`;
+      const flagTag = (v.farCheckin && canSeeFlags) ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
+      return `<div class="v-item">${v.sn} — ${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t2)} · ${v.by||'—'}${om.tag?' · '+om.tag:''}${flagTag}</div></div>`;
     }).join('');
     const areaTotal = allStores().filter(s=>!disabled[s.id] && s.a===a).length;
     const covPct = areaTotal>0 ? Math.round(100*g.stores.size/areaTotal) : 0;
@@ -2339,6 +2374,8 @@ window.openCheckinWithStore=function(store){
   if(!session){ alert('Please sign in first.'); return; }
   ciStore=store; if(!ciStore)return;
   closeAllOverlays();
+  document.getElementById('ciSave').disabled=false;
+  document.getElementById('ciSave').textContent='Save check-in';
   document.getElementById('ciStore').textContent=ciStore.n+' · '+ciStore.a;
   document.getElementById('ciRemarks').value='';
   document.getElementById('ciRemindDate').value='';
@@ -2466,6 +2503,8 @@ document.getElementById('evSave').onclick=()=>{
     .catch(e=>alert('Could not save correction — '+e.message));
 };
 document.getElementById('ciSave').onclick=()=>{
+  const saveBtn=document.getElementById('ciSave');
+  if(saveBtn.disabled) return; // already mid-save, ignore extra taps
   const outcome = document.getElementById('ciOutcome').value;
   const reason = document.getElementById('ciReason').value;
   const style = document.getElementById('ciStyle').value.trim();
@@ -2481,6 +2520,17 @@ document.getElementById('ciSave').onclick=()=>{
     if(Object.keys(lgd).length) categoryBreakdown.LGD=lgd;
     totalPieces=Object.values(natural).reduce((s,n)=>s+n,0)+Object.values(lgd).reduce((s,n)=>s+n,0);
     if(totalPieces<1){ alert('Please enter at least one category — Natural or LGD.'); return; }
+    const balances=computeCategoryBalances(session.name);
+    const shortages=[];
+    Object.entries(natural).forEach(([cat,n])=>{
+      const have=(balances.Natural&&balances.Natural[cat])||0;
+      if(n>have) shortages.push(cat+' (Natural): have '+have+', trying to sell '+n);
+    });
+    Object.entries(lgd).forEach(([cat,n])=>{
+      const have=(balances.LGD&&balances.LGD[cat])||0;
+      if(n>have) shortages.push(cat+' (LGD): have '+have+', trying to sell '+n);
+    });
+    if(shortages.length){ alert('Not enough stock in hand:\n'+shortages.join('\n')); return; }
   }
   if(outcome==='order_taken'){
     if(!style){ alert('Please enter the style name.'); return; }
@@ -2498,6 +2548,7 @@ document.getElementById('ciSave').onclick=()=>{
   const tripId=document.getElementById('ciTrip').value;
   if(tripId) doc.tripId=tripId;
   const remindDate=document.getElementById('ciRemindDate').value; // "YYYY-MM-DD" or ""
+  saveBtn.disabled=true; saveBtn.textContent='Saving…';
   const save=(pos)=>{
     if(pos){
       doc.glat=+pos.coords.latitude.toFixed(5); doc.glng=+pos.coords.longitude.toFixed(5);
@@ -2509,6 +2560,7 @@ document.getElementById('ciSave').onclick=()=>{
     db.collection(COL_VISITS).add(doc)
       .then(()=>{
         document.getElementById('ciSheet').classList.remove('open');
+        saveBtn.disabled=false; saveBtn.textContent='Save check-in';
         if((outcome==='stock_sold'||outcome==='order_taken') && ciStore.live){ // either sale type graduates a live retailer out of Prospect status
           db.collection(COL_RETAILERS).doc(ciStore.id).update({saleStatus:'sold'})
             .catch(e=>alert('Check-in saved, but could not update the store status — '+e.message));
@@ -2521,7 +2573,7 @@ document.getElementById('ciSave').onclick=()=>{
           }).catch(e=>alert('Check-in saved, but the reminder could not be saved — '+e.message));
         }
       })
-      .catch(e=>alert('Could not save — '+e.message)); };
+      .catch(e=>{ alert('Could not save — '+e.message); saveBtn.disabled=false; saveBtn.textContent='Save check-in'; }); };
   if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>save(p),()=>save(null),{timeout:4000,maximumAge:60000}); }
   else save(null);
 };
