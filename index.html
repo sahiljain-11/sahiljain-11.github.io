@@ -301,7 +301,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <button class="btn" id="addBtn">+ Add</button>
     <button class="btn ghost" id="rmBtn">Reminders<span id="rmBadge" style="display:none"></span></button>
     <button class="btn ghost" id="rpBtn">Report</button>
-    <button class="btn ghost" id="excelBtn">Excel</button>
+    <button class="btn ghost" id="excelBtn" style="display:none">Excel</button>
     <button class="btn ghost" id="stockBtn">Stock</button>
   </div>
   <div class="chip-strip">
@@ -386,7 +386,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v50.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v53.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -564,10 +564,10 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
       </select>
     </div>
     <div id="ciPiecesBox" style="display:none">
-      <label>Number of pieces sold</label>
-      <input id="ciPieces" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 3">
-      <label>Category</label>
-      <div class="rp-filters" id="ciCategoryChips"></div>
+      <label>Natural</label>
+      <div class="edit-cat-grid" id="ciNaturalGrid"></div>
+      <label>LGD</label>
+      <div class="edit-cat-grid" id="ciLgdGrid"></div>
     </div>
     <div id="ciOrderBox" style="display:none">
       <label>Style name</label>
@@ -620,10 +620,10 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </select>
   </div>
   <div id="evPiecesBox" style="display:none">
-    <label>Number of pieces sold</label>
-    <input id="evPieces" type="number" inputmode="numeric" min="1" step="1">
-    <label>Category</label>
-    <div class="rp-filters" id="evCategoryChips"></div>
+    <label>Natural</label>
+    <div class="edit-cat-grid" id="evNaturalGrid"></div>
+    <label>LGD</label>
+    <div class="edit-cat-grid" id="evLgdGrid"></div>
   </div>
   <div id="evOrderBox" style="display:none">
     <label>Style name</label>
@@ -756,9 +756,9 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
     <div class="rp-filters" id="stockPeriodPills">
       <span class="pill" data-d="1">Today</span>
-      <span class="pill on" data-d="7">7 days</span>
+      <span class="pill" data-d="7">7 days</span>
       <span class="pill" data-d="30">30 days</span>
-      <span class="pill" data-d="0" id="stockPillAll">All time</span>
+      <span class="pill on" data-d="0" id="stockPillAll">All time</span>
       <span class="pill" id="stockPillCustom">📅 Custom range</span>
     </div>
     <div id="stockCustomRangeBox" style="display:none;margin-top:8px">
@@ -940,6 +940,7 @@ function enterApp(profile){
   document.getElementById('logoutRow').style.display='block';
   document.getElementById('whoAmI').textContent=session.name+(session.role==='admin'?' · admin':session.role==='manager'?' · manager':'');
   document.getElementById('newZoneBtn').style.display = session.role==='admin' ? '' : 'none';
+  document.getElementById('excelBtn').style.display = session.role==='admin' ? '' : 'none';
   // add-retailer is available to every signed-in user, regardless of role
   startReminderListener();
   render();
@@ -947,11 +948,12 @@ function enterApp(profile){
 
 let reminders=[];
 let carryEntries=[], approvals=[], repairs=[];
-const STOCK_CATEGORIES=['Mix','Nosepin','Earrings','Rings','Tanmania','Bracelet','Necklace','Chain','Pendant','Bangle'];
+const STOCK_CATEGORIES=['Mix','Nosepin','Earrings','Rings','Tanmania','Bracelet','Necklace','Vaddanam','Pendant','Bangle'];
+const STOCK_MATERIALS=['Natural','LGD'];
 let autoPopupShown=false;
 
 /* ==================== STOCK PAGE ==================== */
-let stockActiveTab='daily', stockRpDays=7, stockRpWho='', stockCustomRange=false;
+let stockActiveTab='daily', stockRpDays=0, stockRpWho='', stockCustomRange=false;
 let approvalRetailerChosen=null, mktSelectedPerson='';
 
 document.getElementById('stockBtn').onclick=()=>{
@@ -1006,10 +1008,9 @@ function drawStockPage(){
   document.getElementById('stockTabDaily').classList.toggle('on', stockActiveTab==='daily');
   document.getElementById('stockTabApproval').classList.toggle('on', stockActiveTab==='approval');
   document.getElementById('stockTabRepair').classList.toggle('on', stockActiveTab==='repair');
-  document.getElementById('stockPeriodPills').style.display = stockActiveTab==='daily' ? 'none' : '';
   document.getElementById('stockPillAll').textContent = canSeeAll ? 'All time' : 'Last 1 year';
   document.getElementById('stockPillCustom').classList.toggle('on', stockCustomRange);
-  document.getElementById('stockCustomRangeBox').style.display = (stockCustomRange && stockActiveTab!=='daily') ? '' : 'none';
+  document.getElementById('stockCustomRangeBox').style.display = stockCustomRange ? '' : 'none';
   document.getElementById('stockExportTop').style.display = canSeeAll ? '' : 'none';
   document.getElementById('stockExportPdfTop').style.display = canSeeAll ? '' : 'none';
   const {cutoff,upperCutoff}=stockCutoffs();
@@ -1033,39 +1034,60 @@ function computeLedgerForPerson(person){
   const soldVisits=visits.filter(v=>v.by===person && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0);
   const catByDate={}, rawByDate={};
   entries.forEach(e=>{
+    const mat=e.material||'Natural';
     if(!catByDate[e.date]) catByDate[e.date]={};
-    catByDate[e.date][e.category]=(catByDate[e.date][e.category]||0)+(e.count||0);
+    if(!catByDate[e.date][mat]) catByDate[e.date][mat]={};
+    catByDate[e.date][mat][e.category]=(catByDate[e.date][mat][e.category]||0)+(e.count||0);
     if(!rawByDate[e.date]) rawByDate[e.date]=[];
     rawByDate[e.date].push(e);
   });
-  const soldByDate={}, soldCatByDate={};
+  const soldByDate={}, soldMatCatByDate={};
   soldVisits.forEach(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0; if(!t) return;
     const d=localDateStr(t);
     soldByDate[d]=(soldByDate[d]||0)+v.pieces;
-    if(!soldCatByDate[d]) soldCatByDate[d]={};
-    const cat=v.category||'Uncategorised';
-    soldCatByDate[d][cat]=(soldCatByDate[d][cat]||0)+v.pieces;
+    if(!soldMatCatByDate[d]) soldMatCatByDate[d]={};
+    if(v.categoryBreakdown){
+      Object.entries(v.categoryBreakdown).forEach(([mat,cats])=>{
+        if(!soldMatCatByDate[d][mat]) soldMatCatByDate[d][mat]={};
+        Object.entries(cats).forEach(([cat,n])=>{ soldMatCatByDate[d][mat][cat]=(soldMatCatByDate[d][mat][cat]||0)+n; });
+      });
+    }else{ // legacy single-category visit, recorded before Natural/LGD tracking existed
+      const mat='Natural', cat=v.category||'Uncategorised';
+      if(!soldMatCatByDate[d][mat]) soldMatCatByDate[d][mat]={};
+      soldMatCatByDate[d][mat][cat]=(soldMatCatByDate[d][mat][cat]||0)+v.pieces;
+    }
   });
   const allDates=[...new Set(Object.keys(catByDate).concat(Object.keys(soldByDate)))].sort();
   let running=0;
   return allDates.map(date=>{
-    const cats=catByDate[date]||{};
-    const additions=Object.values(cats).reduce((s,n)=>s+n,0);
+    const matCats=catByDate[date]||{};
+    const additions=Object.values(matCats).reduce((sum,catObj)=>sum+Object.values(catObj).reduce((s,n)=>s+n,0),0);
     const sales=soldByDate[date]||0;
-    const soldCats=soldCatByDate[date]||{};
+    const soldMatCats=soldMatCatByDate[date]||{};
     const opening=running, eod=opening+additions-sales;
     running=eod;
     const rawEntries=(rawByDate[date]||[]).sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0));
-    return {date,opening,additions,sales,eod,cats,soldCats,rawEntries};
+    return {date,opening,additions,sales,eod,matCats,soldMatCats,rawEntries};
   });
+}
+function mktCategoryGridHtml(prefix){
+  return STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="${prefix}_${c}" type="number" min="0" step="1" placeholder="0">`).join('');
 }
 function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   const body=document.getElementById('stockBody');
+  const addCard = `<div class="inline-card" id="mktAddCard">
+    <div class="ic-head" onclick="this.parentElement.classList.toggle('open')"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">+ Add pieces</span><span class="ledger-edit">tap to open</span></div>
+    <div class="inline-form">
+      <div class="rp-filters" id="mktAddMaterialChips"></div>
+      <div class="edit-cat-grid" style="margin-top:10px">${mktCategoryGridHtml('mktAddQty')}</div>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveMarketingAdd()">Save</button>
+    </div>
+  </div>`;
   if(!mktSelectedPerson){
     const allPeople=[...new Set(carryEntries.map(c=>c.by))].filter(Boolean).sort();
-    let html='';
-    if(!allPeople.length){ html+='<div class="rm-empty">No stock logged yet.</div>'; body.innerHTML=html; return; }
+    let html=addCard;
+    if(!allPeople.length){ html+='<div class="rm-empty">No stock logged yet.</div>'; body.innerHTML=html; renderMktAddMaterialChips(); return; }
     html+=allPeople.map(p=>{
       const rows=computeLedgerForPerson(p);
       const latest=rows.length?rows[rows.length-1]:{eod:0};
@@ -1074,35 +1096,34 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
       </div>`;
     }).join('');
     body.innerHTML=html;
+    renderMktAddMaterialChips();
     return;
   }
-  const rows=computeLedgerForPerson(mktSelectedPerson).slice().reverse();
-  const latestEod=rows.length?rows[0].eod:0;
+  const allRows=computeLedgerForPerson(mktSelectedPerson);
+  const rows=allRows.filter(r=>{ const ms=new Date(r.date+'T00:00:00').getTime(); return ms>=cutoff && ms<=upperCutoff; }).slice().reverse();
+  const latestEod=allRows.length?allRows[allRows.length-1].eod:0;
   const today=todayStr();
   let html = canSeeAll ? `<span class="ledger-edit" onclick="mktSelectedPerson=''; stockRpWho=''; drawStockPage();">← All salespeople</span>` : '';
   html += `<div class="stat-row" style="margin-top:10px"><div class="stat-box"><span class="sv">${latestEod}</span><span class="sl">In hand right now</span></div></div>`;
-  html += `<div class="inline-card" id="mktAddCard">
-    <div class="ic-head" onclick="this.parentElement.classList.toggle('open')"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">+ Add pieces</span><span class="ledger-edit">tap to open</span></div>
-    <div class="inline-form">
-      <div class="edit-cat-grid">${STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="mktAddQty_${c}" type="number" min="0" step="1" placeholder="0">`).join('')}</div>
-      <button class="btn" style="width:100%;margin-top:10px" onclick="event.stopPropagation();saveMarketingAdd()">Save</button>
-    </div>
-  </div>`;
+  html += addCard;
   html += `<div class="ledger-row head"><span>Date</span><span>Opening</span><span>Added</span><span>Sold</span><span>EOD</span></div>`;
-  if(!rows.length){ html+='<div class="rm-empty">No activity logged yet.</div>'; }
+  if(!rows.length){ html+='<div class="rm-empty">No activity in this period.</div>'; }
   else{
     html += rows.map(r=>{
       const isToday=r.date===today;
-      const catLine=Object.entries(r.cats).map(([c,n])=>`${n} ${c}`).join(', ') || '—';
-      const soldCatLine=Object.entries(r.soldCats).map(([c,n])=>`${n} ${c}`).join(', ') || '—';
+      const catLine=Object.entries(r.matCats).map(([mat,cats])=>mat+': '+(Object.entries(cats).map(([c,n])=>`${n} ${c}`).join(', ')||'—')).join(' · ') || '—';
+      const soldCatLine=Object.entries(r.soldMatCats).map(([mat,cats])=>mat+': '+(Object.entries(cats).map(([c,n])=>`${n} ${c}`).join(', ')||'—')).join(' · ') || '—';
       const entryLines=r.rawEntries.map(e=>{
         const t=e.ts&&e.ts.toMillis?e.ts.toMillis():0;
         const timeStr=t?new Date(t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}):'';
         const sign=e.count>0?'+':'';
+        const mat=e.material||'Natural';
         const tag=e.adjustment?`<span style="color:var(--z1)"> — adjustment by ${e.adjustedBy}${e.note?': '+e.note:''}</span>`:'';
-        return `<div class="v-item">${sign}${e.count} ${e.category}${timeStr?' · '+timeStr:''}${tag}</div>`;
+        return `<div class="v-item">${sign}${e.count} ${mat} ${e.category}${timeStr?' · '+timeStr:''}${tag}</div>`;
       }).join('') || '<div class="rm-empty">No entries.</div>';
       const adjustForm = canSeeAll ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--cream-4)">
+        <label>Material</label>
+        <select id="adjMat_${r.date}">${STOCK_MATERIALS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
         <label>Category</label>
         <select id="adjCat_${r.date}">${STOCK_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
         <label>Adjustment (+ to add, - to reduce)</label>
@@ -1127,6 +1148,16 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
     }).join('');
   }
   body.innerHTML=html;
+  renderMktAddMaterialChips();
+}
+let mktAddMaterial='Natural';
+function renderMktAddMaterialChips(){
+  const box=document.getElementById('mktAddMaterialChips');
+  if(!box) return;
+  box.innerHTML=STOCK_MATERIALS.map(m=>`<span class="cat-chip ${m===mktAddMaterial?'on':''}" data-m="${m}" style="flex:1;text-align:center">${m}</span>`).join('');
+  box.querySelectorAll('.cat-chip').forEach(ch=>{
+    ch.onclick=(e)=>{ e.stopPropagation(); mktAddMaterial=ch.dataset.m; box.querySelectorAll('.cat-chip').forEach(x=>x.classList.toggle('on',x===ch)); };
+  });
 }
 window.saveMarketingAdd=function(){
   const batch=db.batch();
@@ -1137,7 +1168,7 @@ window.saveMarketingAdd=function(){
     if(val>0){
       any=true;
       batch.set(db.collection(COL_CARRY).doc(), {
-        by: mktSelectedPerson||session.name, foruid:session.uid, date:todayStr(), category:cat, count:val,
+        by: session.name, foruid:session.uid, date:todayStr(), category:cat, material:mktAddMaterial, count:val,
         ts:firebase.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -1149,6 +1180,7 @@ window.saveMarketingAdd=function(){
 };
 window.saveMarketingAdjustment=function(date){
   if(!session||session.role!=='admin'){ alert('Only admins can make adjustments.'); return; }
+  const mat=document.getElementById('adjMat_'+date).value;
   const cat=document.getElementById('adjCat_'+date).value;
   const amt=+document.getElementById('adjCount_'+date).value;
   const note=document.getElementById('adjNote_'+date).value.trim();
@@ -1156,11 +1188,12 @@ window.saveMarketingAdjustment=function(date){
   if(!note){ alert('Please enter a reason for this adjustment — it stays visible in the history permanently.'); return; }
   const person=mktSelectedPerson||session.name;
   db.collection(COL_CARRY).add({
-    by:person, foruid:session.uid, date:date, category:cat, count:amt,
+    by:person, foruid:session.uid, date:date, category:cat, material:mat, count:amt,
     adjustment:true, adjustedBy:session.name, note:note,
     ts:firebase.firestore.FieldValue.serverTimestamp()
   }).catch(e=>alert('Could not save — '+e.message));
 };
+
 
 
 
@@ -1339,8 +1372,8 @@ function getStockExportRows(){
     let rows=[];
     people.forEach(p=>{
       computeLedgerForPerson(p).forEach(r=>{
-        const catLine=Object.entries(r.cats).map(([c,n])=>`${n} ${c}`).join(', ');
-        const soldCatLine=Object.entries(r.soldCats).map(([c,n])=>`${n} ${c}`).join(', ');
+        const catLine=Object.entries(r.matCats).map(([mat,cats])=>mat+': '+Object.entries(cats).map(([c,n])=>`${n} ${c}`).join(', ')).join(' · ');
+        const soldCatLine=Object.entries(r.soldMatCats).map(([mat,cats])=>mat+': '+Object.entries(cats).map(([c,n])=>`${n} ${c}`).join(', ')).join(' · ');
         rows.push({'Salesperson':p,'Date':r.date,'Opening':r.opening,'Added':r.additions,'Added Categories':catLine,'Sold':r.sales,'Sold Categories':soldCatLine,'EOD':r.eod});
       });
     });
@@ -1840,6 +1873,7 @@ window.openTripReport=function(id){
 
 /* ---- Excel export / bulk update ---- */
 document.getElementById('excelBtn').onclick=()=>{
+  if(!session||session.role!=='admin'){ alert('Only admins can access this.'); return; }
   closeAllOverlays();
   document.getElementById('excelImportZone').style.display = (session && session.role==='admin') ? '' : 'none';
   document.getElementById('excelUploadInput').value='';
@@ -2312,9 +2346,9 @@ window.openCheckinWithStore=function(store){
   document.getElementById('ciOutcome').value='';
   document.getElementById('ciReason').value='';
   document.getElementById('ciReasonBox').style.display='none';
-  document.getElementById('ciPieces').value='';
   document.getElementById('ciPiecesBox').style.display='none';
-  ciSelectedCategory='Rings';
+  document.getElementById('ciNaturalGrid').innerHTML='';
+  document.getElementById('ciLgdGrid').innerHTML='';
   document.getElementById('ciStyle').value='';
   document.getElementById('ciSpecs').value='';
   document.getElementById('ciDelivery').value='';
@@ -2328,19 +2362,32 @@ window.openCheckin=function(id){
   const s=allStores().find(s=>s.id===id); if(!s)return;
   openCheckinWithStore(s);
 };
-let ciSelectedCategory='Rings';
-function renderCiCategoryChips(){
-  const box=document.getElementById('ciCategoryChips');
-  box.innerHTML=STOCK_CATEGORIES.map(c=>`<span class="cat-chip ${c===ciSelectedCategory?'on':''}" data-c="${c}">${c}</span>`).join('');
-  box.querySelectorAll('.cat-chip').forEach(ch=>{
-    ch.onclick=()=>{ ciSelectedCategory=ch.dataset.c; box.querySelectorAll('.cat-chip').forEach(x=>x.classList.toggle('on',x===ch)); };
+function categoryGridHtml(prefix){
+  return STOCK_CATEGORIES.map(c=>`<label>${c}</label><input id="${prefix}_${c}" type="number" min="0" step="1" placeholder="0">`).join('');
+}
+function readCategoryGrid(prefix){
+  const out={};
+  STOCK_CATEGORIES.forEach(c=>{
+    const el=document.getElementById(prefix+'_'+c);
+    const val=el?(+el.value||0):0;
+    if(val>0) out[c]=val;
+  });
+  return out;
+}
+function fillCategoryGrid(prefix,values){
+  STOCK_CATEGORIES.forEach(c=>{
+    const el=document.getElementById(prefix+'_'+c);
+    if(el) el.value=(values&&values[c])?values[c]:'';
   });
 }
 document.getElementById('ciOutcome').addEventListener('change',e=>{
   document.getElementById('ciReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
   document.getElementById('ciPiecesBox').style.display = e.target.value==='stock_sold' ? '' : 'none';
   document.getElementById('ciOrderBox').style.display = e.target.value==='order_taken' ? '' : 'none';
-  if(e.target.value==='stock_sold') renderCiCategoryChips();
+  if(e.target.value==='stock_sold'){
+    document.getElementById('ciNaturalGrid').innerHTML=categoryGridHtml('ciNat');
+    document.getElementById('ciLgdGrid').innerHTML=categoryGridHtml('ciLgd');
+  }
 });
 document.getElementById('ciCancel').onclick=()=>document.getElementById('ciSheet').classList.remove('open');
 
@@ -2353,7 +2400,6 @@ window.openEditVisit=function(id){
   const outcomeVal = editVisit.outcome==='sold' ? 'stock_sold' : (editVisit.outcome||''); // normalize legacy value
   document.getElementById('evOutcome').value=outcomeVal;
   document.getElementById('evReason').value=editVisit.reason||'';
-  document.getElementById('evPieces').value=editVisit.pieces||'';
   document.getElementById('evStyle').value=editVisit.style||'';
   document.getElementById('evSpecs').value=editVisit.specs||'';
   document.getElementById('evDelivery').value=editVisit.deliveryDate||'';
@@ -2361,35 +2407,47 @@ window.openEditVisit=function(id){
   document.getElementById('evReasonBox').style.display = outcomeVal==='not_sold' ? '' : 'none';
   document.getElementById('evPiecesBox').style.display = outcomeVal==='stock_sold' ? '' : 'none';
   document.getElementById('evOrderBox').style.display = outcomeVal==='order_taken' ? '' : 'none';
-  if(outcomeVal==='stock_sold'){ evSelectedCategory=editVisit.category||'Rings'; renderEvCategoryChips(); }
+  if(outcomeVal==='stock_sold'){
+    document.getElementById('evNaturalGrid').innerHTML=categoryGridHtml('evNat');
+    document.getElementById('evLgdGrid').innerHTML=categoryGridHtml('evLgd');
+    if(editVisit.categoryBreakdown){
+      fillCategoryGrid('evNat', editVisit.categoryBreakdown.Natural||{});
+      fillCategoryGrid('evLgd', editVisit.categoryBreakdown.LGD||{});
+    }else if(editVisit.category){ // legacy single-category visit, assume Natural
+      fillCategoryGrid('evNat', {[editVisit.category]: editVisit.pieces||1});
+      fillCategoryGrid('evLgd', {});
+    }
+  }
   document.getElementById('editVisitSheet').classList.add('open');
 };
-let evSelectedCategory='Rings';
-function renderEvCategoryChips(){
-  const box=document.getElementById('evCategoryChips');
-  box.innerHTML=STOCK_CATEGORIES.map(c=>`<span class="cat-chip ${c===evSelectedCategory?'on':''}" data-c="${c}">${c}</span>`).join('');
-  box.querySelectorAll('.cat-chip').forEach(ch=>{
-    ch.onclick=()=>{ evSelectedCategory=ch.dataset.c; box.querySelectorAll('.cat-chip').forEach(x=>x.classList.toggle('on',x===ch)); };
-  });
-}
 document.getElementById('evOutcome').addEventListener('change',e=>{
   document.getElementById('evReasonBox').style.display = e.target.value==='not_sold' ? '' : 'none';
   document.getElementById('evPiecesBox').style.display = e.target.value==='stock_sold' ? '' : 'none';
   document.getElementById('evOrderBox').style.display = e.target.value==='order_taken' ? '' : 'none';
-  if(e.target.value==='stock_sold') renderEvCategoryChips();
+  if(e.target.value==='stock_sold'){
+    document.getElementById('evNaturalGrid').innerHTML=categoryGridHtml('evNat');
+    document.getElementById('evLgdGrid').innerHTML=categoryGridHtml('evLgd');
+  }
 });
 document.getElementById('evCancel').onclick=()=>document.getElementById('editVisitSheet').classList.remove('open');
 document.getElementById('evSave').onclick=()=>{
   if(!editVisit) return;
   const outcome=document.getElementById('evOutcome').value;
   const reason=document.getElementById('evReason').value;
-  const piecesRaw=document.getElementById('evPieces').value;
   const style=document.getElementById('evStyle').value.trim();
   const specs=document.getElementById('evSpecs').value.trim();
   const delivery=document.getElementById('evDelivery').value;
   if(!outcome){ alert('Please select what happened this visit.'); return; }
   if(outcome==='not_sold' && !reason){ alert('Please select a reason.'); return; }
-  if(outcome==='stock_sold' && (!piecesRaw || +piecesRaw<1)){ alert('Please enter the number of pieces sold.'); return; }
+  let categoryBreakdown=null, totalPieces=0;
+  if(outcome==='stock_sold'){
+    const natural=readCategoryGrid('evNat'), lgd=readCategoryGrid('evLgd');
+    categoryBreakdown={};
+    if(Object.keys(natural).length) categoryBreakdown.Natural=natural;
+    if(Object.keys(lgd).length) categoryBreakdown.LGD=lgd;
+    totalPieces=Object.values(natural).reduce((s,n)=>s+n,0)+Object.values(lgd).reduce((s,n)=>s+n,0);
+    if(totalPieces<1){ alert('Please enter at least one category — Natural or LGD.'); return; }
+  }
   if(outcome==='order_taken' && (!style || !specs || !delivery)){ alert('Please fill in style, specifications, and expected delivery date.'); return; }
   const patch={
     outcome:outcome,
@@ -2398,8 +2456,9 @@ document.getElementById('evSave').onclick=()=>{
     editedAt:firebase.firestore.FieldValue.serverTimestamp()
   };
   patch.reason = outcome==='not_sold' ? reason : firebase.firestore.FieldValue.delete();
-  patch.pieces = outcome==='stock_sold' ? +piecesRaw : firebase.firestore.FieldValue.delete();
-  patch.category = outcome==='stock_sold' ? evSelectedCategory : firebase.firestore.FieldValue.delete();
+  patch.pieces = outcome==='stock_sold' ? totalPieces : firebase.firestore.FieldValue.delete();
+  patch.categoryBreakdown = outcome==='stock_sold' ? categoryBreakdown : firebase.firestore.FieldValue.delete();
+  patch.category = firebase.firestore.FieldValue.delete(); // retire the old single-category field once corrected
   if(outcome==='order_taken'){ patch.style=style; patch.specs=specs; patch.deliveryDate=delivery; }
   else{ patch.style=firebase.firestore.FieldValue.delete(); patch.specs=firebase.firestore.FieldValue.delete(); patch.deliveryDate=firebase.firestore.FieldValue.delete(); }
   db.collection(COL_VISITS).doc(editVisit.id).update(patch)
@@ -2409,13 +2468,20 @@ document.getElementById('evSave').onclick=()=>{
 document.getElementById('ciSave').onclick=()=>{
   const outcome = document.getElementById('ciOutcome').value;
   const reason = document.getElementById('ciReason').value;
-  const piecesRaw = document.getElementById('ciPieces').value;
   const style = document.getElementById('ciStyle').value.trim();
   const specs = document.getElementById('ciSpecs').value.trim();
   const delivery = document.getElementById('ciDelivery').value;
   if(!outcome){ alert('Please select what happened this visit.'); return; }
   if(outcome==='not_sold' && !reason){ alert('Please select a reason.'); return; }
-  if(outcome==='stock_sold' && (!piecesRaw || +piecesRaw<1)){ alert('Please enter the number of pieces sold.'); return; }
+  let categoryBreakdown=null, totalPieces=0;
+  if(outcome==='stock_sold'){
+    const natural=readCategoryGrid('ciNat'), lgd=readCategoryGrid('ciLgd');
+    categoryBreakdown={};
+    if(Object.keys(natural).length) categoryBreakdown.Natural=natural;
+    if(Object.keys(lgd).length) categoryBreakdown.LGD=lgd;
+    totalPieces=Object.values(natural).reduce((s,n)=>s+n,0)+Object.values(lgd).reduce((s,n)=>s+n,0);
+    if(totalPieces<1){ alert('Please enter at least one category — Natural or LGD.'); return; }
+  }
   if(outcome==='order_taken'){
     if(!style){ alert('Please enter the style name.'); return; }
     if(!specs){ alert('Please enter the specifications.'); return; }
@@ -2427,7 +2493,7 @@ document.getElementById('ciSave').onclick=()=>{
     outcome:outcome,
     ts:firebase.firestore.FieldValue.serverTimestamp()};
   if(outcome==='not_sold') doc.reason=reason;
-  if(outcome==='stock_sold'){ doc.pieces=+piecesRaw; doc.category=ciSelectedCategory; }
+  if(outcome==='stock_sold'){ doc.pieces=totalPieces; doc.categoryBreakdown=categoryBreakdown; }
   if(outcome==='order_taken'){ doc.style=style; doc.specs=specs; doc.deliveryDate=delivery; }
   const tripId=document.getElementById('ciTrip').value;
   if(tripId) doc.tripId=tripId;
@@ -2580,7 +2646,7 @@ function drawReport(){
   let html='<div class="stat-row">'
     + `<div class="stat-box ${on('')}" onclick="setRpSubFilter('')" style="cursor:pointer"><span class="sv">${preFlagFilter.length}</span><span class="sl">Check-ins</span></div>`
     + `<div class="stat-box"><span class="sv">${visitedStores}/${activeStores}</span><span class="sl">Stores (${covPct}%)</span></div>`
-    + `<div class="stat-box ${on('stocksold')}" onclick="setRpSubFilter('stocksold')" style="cursor:pointer"><span class="sv">${stockSoldCountBase}</span><span class="sl">Stock Sold</span></div>`
+    + `<div class="stat-box ${on('stocksold')}" onclick="setRpSubFilter('stocksold')" style="cursor:pointer"><span class="sv">${stockSoldCountBase}</span><span class="sl">Sales (visits)</span></div>`
     + `<div class="stat-box ${on('orderstaken')}" onclick="setRpSubFilter('orderstaken')" style="cursor:pointer"><span class="sv">${ordersTakenCountBase}</span><span class="sl">Orders Taken</span></div>`
     + `<div class="stat-box ${on('pieces')}" onclick="setRpSubFilter('pieces')" style="cursor:pointer"><span class="sv">${piecesCountBase}</span><span class="sl">Pieces Sold</span></div>`
     + (canSeeAllReports ? `<div class="stat-box ${flaggedCount>0?'warn':''} ${on('flagged')}" onclick="setRpSubFilter('flagged')" style="cursor:pointer"><span class="sv">${flaggedCount}</span><span class="sl">Flagged</span></div>` : '')
@@ -2597,7 +2663,18 @@ function drawReport(){
         const editTag = (canSeeAllReports && v.editedBy) ? ` · <span style="color:var(--muted);font-style:italic">edited by ${v.editedBy}</span>` : '';
         const editLink = canSeeAllReports ? ` · <span class="pp-toggle" style="font-size:10px" onclick="openEditVisit('${v.id}')">✎ edit</span>` : '';
         const om=outcomeMeta(v);
-        const catTag = (rpShowCategories && v.category) ? ` · <span style="color:var(--gold)">${v.category}</span>` : '';
+        let catTag='';
+        if(rpShowCategories && v.outcome==='stock_sold'){
+          let summary='';
+          if(v.categoryBreakdown){
+            summary=Object.entries(v.categoryBreakdown).map(([mat,cats])=>
+              Object.entries(cats).map(([c,n])=>`${n} ${mat} ${c}`).join(', ')
+            ).filter(Boolean).join(', ');
+          }else if(v.category){
+            summary=`${v.pieces||''} ${v.category}`;
+          }
+          if(summary) catTag = ` · <span style="color:var(--gold)">${summary}</span>`;
+        }
         const outcomeTag = om.tag ? ` · ${om.tag}${catTag}` : '';
         return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}${editTag}${editLink}</div></div>`;
       }).join('');
