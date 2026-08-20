@@ -66,6 +66,12 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 #approvalSuggest .sug .sn{display:block;font-family:'Cinzel',serif;font-size:13px}
 #approvalSuggest .sug .sa{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 #approvalSuggest .none,#fStateSuggest .none{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic}
+#fZoneSuggest,#eZoneSuggest,#rpZoneSuggest{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--cream-4);border-top:none;z-index:1310;max-height:280px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(28,23,18,.22)}
+#fZoneSuggest.show,#eZoneSuggest.show,#rpZoneSuggest.show{display:block}
+#fZoneSuggest .sug,#eZoneSuggest .sug,#rpZoneSuggest .sug{padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--cream-2);font-size:13px}
+#fZoneSuggest .sug:last-child,#eZoneSuggest .sug:last-child,#rpZoneSuggest .sug:last-child{border-bottom:none}
+#fZoneSuggest .sug:hover,#eZoneSuggest .sug:hover,#rpZoneSuggest .sug:hover{background:var(--cream-2)}
+#fZoneSuggest .none,#eZoneSuggest .none,#rpZoneSuggest .none{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic}
 #rmNewSuggest{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--cream-4);border-top:none;z-index:1500;max-height:220px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(28,23,18,.18)}
 #rmNewSuggest.show{display:block}
 #rmNewSuggest .sug{padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--cream-2)}
@@ -398,7 +404,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v57.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v58.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -417,7 +423,11 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <div id="fAreaStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
   <label>Pincode</label><input id="fPin" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
   <label>Coverage group (for map colour)</label>
-  <select id="fZone">
+  <div style="position:relative">
+    <input id="fZoneSearch" placeholder="Search coverage group…" autocomplete="off">
+    <div id="fZoneSuggest"></div>
+  </div>
+  <select id="fZone" style="display:none">
     <option value="1">Hyderabad Zone 1 — Central, Old City & South</option>
     <option value="2">Hyderabad Zone 2 — East</option>
     <option value="3">Hyderabad Zone 3 — North</option>
@@ -483,7 +493,11 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <label>Area / Town</label><input id="eArea">
   <label>Full address</label><textarea id="eAddr" rows="2"></textarea>
   <label>Coverage group</label>
-  <select id="eZone">
+  <div style="position:relative">
+    <input id="eZoneSearch" placeholder="Search coverage group…" autocomplete="off">
+    <div id="eZoneSuggest"></div>
+  </div>
+  <select id="eZone" style="display:none">
     <option value="1">Hyderabad Zone 1 — Central, Old City & South</option>
     <option value="2">Hyderabad Zone 2 — East</option>
     <option value="3">Hyderabad Zone 3 — North</option>
@@ -667,7 +681,11 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
       <span class="pill" id="rpTabTrips">Trips<span id="tripBadge" style="display:none"></span></span>
     </div>
     <input id="rpSearch" type="search" placeholder="Search a retailer to see their visit history…" style="width:100%;margin-top:9px;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
-    <select id="rpZoneSelect" style="width:100%;margin-top:7px;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+    <div style="position:relative;margin-top:7px">
+      <input id="rpZoneSearch" placeholder="Filter by district or coverage group…" autocomplete="off" style="width:100%;background:#fff;border:1px solid var(--cream-4);color:var(--ink);border-radius:2px;padding:8px 11px;font-size:13px;font-family:'Questrial'">
+      <div id="rpZoneSuggest"></div>
+    </div>
+    <select id="rpZoneSelect" style="display:none">
       <option value="">All areas / districts</option>
     </select>
     <div class="rp-filters" id="periodPills">
@@ -1786,6 +1804,28 @@ function refreshZoneDropdowns(){
   });
   populateReportZoneFilter();
 }
+function wireZoneSearch(searchId,suggestId,selectId){
+  const input=document.getElementById(searchId), box=document.getElementById(suggestId), select=document.getElementById(selectId);
+  function options(){ return [...select.options].filter(o=>o.value!=='').map(o=>({value:o.value,label:o.textContent})); }
+  function sync(){ const opt=select.options[select.selectedIndex]; input.value = (opt&&opt.value) ? opt.textContent : ''; }
+  function show(q){
+    q=q.trim().toLowerCase();
+    const matches = q ? options().filter(o=>o.label.toLowerCase().includes(q)) : options();
+    box.innerHTML = matches.length ? matches.slice(0,40).map(o=>`<div class="sug" data-v="${o.value.replace(/"/g,'&quot;')}">${o.label}</div>`).join('') : '<div class="none">No match</div>';
+    box.classList.add('show');
+    box.querySelectorAll('.sug').forEach(el=>{
+      el.onclick=()=>{ select.value=el.dataset.v; select.dispatchEvent(new Event('change')); sync(); box.classList.remove('show'); };
+    });
+  }
+  input.addEventListener('focus',()=>{ input.select(); show(''); });
+  input.addEventListener('input',e=>show(e.target.value));
+  document.addEventListener('click',e=>{ if(!box.contains(e.target) && e.target!==input) box.classList.remove('show'); });
+  sync();
+  return sync;
+}
+const syncFZoneSearch=wireZoneSearch('fZoneSearch','fZoneSuggest','fZone');
+const syncEZoneSearch=wireZoneSearch('eZoneSearch','eZoneSuggest','eZone');
+const syncRpZoneSearch=wireZoneSearch('rpZoneSearch','rpZoneSuggest','rpZoneSelect');
 function populateReportZoneFilter(){
   const sel=document.getElementById('rpZoneSelect');
   const current=sel.value;
@@ -1794,6 +1834,7 @@ function populateReportZoneFilter(){
   sel.innerHTML='<option value="">All areas / districts</option>'+
     entries.map(([code,name])=>`<option value="${code}">${name}</option>`).join('');
   if([...sel.options].some(o=>o.value===current)) sel.value=current;
+  if(typeof syncRpZoneSearch==="function") syncRpZoneSearch();
 }
 function populateCheckinTripSelect(){
   const sel=document.getElementById('ciTrip');
@@ -2216,7 +2257,7 @@ const DISTRICT_ZONE_LOOKUP={'adilabad':20,'anantapur':21,'ballari':22,'bapatla':
 document.getElementById('fDistrict').addEventListener('blur',e=>{
   const key=e.target.value.trim().toLowerCase();
   const dz=DISTRICT_ZONE_LOOKUP[key];
-  if(dz) document.getElementById('fZone').value=dz; // Hyderabad/Bengaluru stay manually picked, everyone else auto-matches by typed district
+  if(dz){ document.getElementById('fZone').value=dz; syncFZoneSearch(); } // Hyderabad/Bengaluru stay manually picked, everyone else auto-matches by typed district
 });
 function resetAddForm(){
   ['fName','fTel','fDistrict','fArea','fPin','fFullAddr'].forEach(i=>document.getElementById(i).value='');
@@ -2406,7 +2447,7 @@ window.openEdit=function(id){
   document.getElementById('eTel').value=editStore.c||'';
   document.getElementById('eArea').value=editStore.a||'';
   document.getElementById('eAddr').value=editStore.ad||'';
-  document.getElementById('eZone').value=String(effectiveZone(editStore));
+  document.getElementById('eZone').value=String(effectiveZone(editStore)); syncEZoneSearch();
   document.getElementById('eLocStatus').textContent='Using current pin location.';
   buildAdminZone(editStore);
   map.closePopup();
