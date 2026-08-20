@@ -58,6 +58,14 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 #suggest .sug .sn{display:block;font-family:'Cinzel',serif;font-size:13px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #suggest .sug .sa{display:block;color:var(--muted);font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #suggest .none{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic}
+#approvalSuggest,#fStateSuggest{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--cream-4);border-top:none;z-index:1310;max-height:240px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(28,23,18,.22)}
+#approvalSuggest.show,#fStateSuggest.show{display:block}
+#approvalSuggest .sug,#fStateSuggest .sug{padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--cream-2)}
+#approvalSuggest .sug:last-child,#fStateSuggest .sug:last-child{border-bottom:none}
+#approvalSuggest .sug:hover,#fStateSuggest .sug:hover{background:var(--cream-2)}
+#approvalSuggest .sug .sn{display:block;font-family:'Cinzel',serif;font-size:13px}
+#approvalSuggest .sug .sa{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+#approvalSuggest .none,#fStateSuggest .none{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic}
 #rmNewSuggest{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--cream-4);border-top:none;z-index:1500;max-height:220px;overflow-y:auto;display:none;box-shadow:0 6px 16px rgba(28,23,18,.18)}
 #rmNewSuggest.show{display:block}
 #rmNewSuggest .sug{padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--cream-2)}
@@ -126,7 +134,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 #eAdminZone .btn.danger{background:var(--z1);color:#fff}
 .pp-offband{background:var(--off);color:#fff;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border-radius:2px;padding:2px 7px;display:inline-block;margin-bottom:4px}
 .pp-prospect{background:var(--gold-dim);color:#1c1712;font-size:11px;font-weight:600;letter-spacing:.01em;text-transform:none;border-radius:2px;padding:3px 8px;display:block;margin-bottom:5px;width:fit-content;max-width:100%;white-space:normal;line-height:1.35}
-.sheet{position:fixed;left:0;right:0;bottom:-110%;background:var(--cream);border-top:2px solid var(--gold-dim);padding:20px 18px 28px;z-index:1100;transition:bottom .25s;box-shadow:0 -6px 30px rgba(28,23,18,.25);max-width:520px;margin:0 auto;max-height:85vh;overflow-y:auto}
+.sheet{position:fixed;left:0;right:0;bottom:-110%;background:var(--cream);border-top:2px solid var(--gold-dim);padding:20px 18px 28px;z-index:1300;transition:bottom .25s;box-shadow:0 -6px 30px rgba(28,23,18,.25);max-width:520px;margin:0 auto;max-height:85vh;overflow-y:auto}
 .sheet.open{bottom:0}
 .sheet h3{font-family:'Cinzel',serif;font-size:18px;color:var(--ink);margin-bottom:4px;letter-spacing:.06em}
 .sheet .sub{font-size:12px;color:var(--muted);margin-bottom:10px}
@@ -390,7 +398,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v55.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v57.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -398,20 +406,16 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
   <button class="btn ghost" id="fMoveBtn" style="width:100%;margin-bottom:4px">Change location</button>
   <label>Store name</label><input id="fName" placeholder="e.g. Sri Lakshmi Jewellers">
   <label>Mobile no.</label><input id="fTel" inputmode="tel" placeholder="e.g. 98480 12345">
+  <label>Full address</label><textarea id="fFullAddr" rows="2" placeholder="e.g. Shop No. 4, Near XYZ Temple, Main Road"></textarea>
   <label>State</label>
-  <select id="fState">
-    <option value="Telangana">Telangana</option>
-    <option value="Andhra Pradesh">Andhra Pradesh</option>
-    <option value="Karnataka">Karnataka</option>
-    <option value="Tamil Nadu">Tamil Nadu</option>
-    <option value="Maharashtra">Maharashtra</option>
-    <option value="Other">Other</option>
-  </select>
+  <div style="position:relative">
+    <input id="fStateSearch" placeholder="Search state…" autocomplete="off">
+    <div id="fStateSuggest"></div>
+  </div>
   <label>District / City</label><input id="fDistrict" placeholder="e.g. Hyderabad">
   <label>Area</label><input id="fArea" placeholder="e.g. Kompally">
   <div id="fAreaStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
   <label>Pincode</label><input id="fPin" inputmode="numeric" maxlength="6" placeholder="6-digit pincode">
-  <label>Full address</label><textarea id="fFullAddr" rows="2" placeholder="e.g. Shop No. 4, Near XYZ Temple, Main Road"></textarea>
   <label>Coverage group (for map colour)</label>
   <select id="fZone">
     <option value="1">Hyderabad Zone 1 — Central, Old City & South</option>
@@ -954,6 +958,11 @@ let reminders=[];
 let carryEntries=[], approvals=[], repairs=[];
 const STOCK_CATEGORIES=['Mix','Nosepin','Earrings','Rings','Tanmania','Bracelet','Necklace','Vaddanam','Pendant','Bangle'];
 const STOCK_MATERIALS=['Natural','LGD'];
+const INDIA_STATES=['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana',
+  'Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram',
+  'Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand',
+  'West Bengal','Andaman and Nicobar Islands','Chandigarh','Dadra and Nagar Haveli and Daman and Diu','Delhi',
+  'Jammu and Kashmir','Ladakh','Lakshadweep','Puducherry'];
 let autoPopupShown=false;
 
 /* ==================== STOCK PAGE ==================== */
@@ -1115,7 +1124,7 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
       const rows=computeLedgerForPerson(p);
       const latest=rows.length?rows[rows.length-1]:{eod:0};
       return `<div class="inline-card" onclick="mktSelectedPerson='${p}'; stockRpWho='${p}'; drawStockPage();" style="cursor:pointer">
-        <div class="ic-head"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">${p}</span><span class="lv">${latest.eod} in hand now</span></div>
+        <div class="ic-head"><span class="sc-name" style="font-family:'Cinzel',serif;font-weight:600">${p}</span><span class="lv" style="${latest.eod<0?'color:var(--z1)':''}">${latest.eod<0?'⚠️ '+latest.eod+' needs reconciliation':latest.eod+' in hand now'}</span></div>
       </div>`;
     }).join('');
     body.innerHTML=html;
@@ -1126,7 +1135,7 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   const latestEod=allRows.length?allRows[allRows.length-1].eod:0;
   const today=todayStr();
   let html = canSeeAll ? `<span class="ledger-edit" onclick="mktSelectedPerson=''; stockRpWho=''; drawStockPage();">← All salespeople</span>` : '';
-  html += `<div class="stat-row" style="margin-top:10px"><div class="stat-box"><span class="sv">${latestEod}</span><span class="sl">In hand right now</span></div></div>`;
+  html += `<div class="stat-row" style="margin-top:10px"><div class="stat-box ${latestEod<0?'warn':''}"><span class="sv">${latestEod}</span><span class="sl">${latestEod<0?'⚠️ Needs reconciliation':'In hand right now'}</span></div></div>`;
   html += addCard;
   html += `<div class="ledger-row head"><span>Date</span><span>Opening</span><span>Added</span><span>Sold</span><span>EOD</span></div>`;
   if(!rows.length){ html+='<div class="rm-empty">No activity in this period.</div>'; }
@@ -1170,7 +1179,9 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   }
   body.innerHTML=html;
 }
+let stockSaveInProgress=false;
 window.saveMarketingAdd=function(){
+  if(stockSaveInProgress) return;
   const natural=readCategoryGrid('mktAddNat'), lgd=readCategoryGrid('mktAddLgd');
   const batch=db.batch();
   let any=false;
@@ -1189,18 +1200,39 @@ window.saveMarketingAdd=function(){
     });
   });
   if(!any){ alert('Please enter at least one category count — Natural or LGD.'); return; }
+  stockSaveInProgress=true;
   batch.commit().then(()=>{
+    stockSaveInProgress=false;
     fillCategoryGrid('mktAddNat',{}); fillCategoryGrid('mktAddLgd',{});
-  }).catch(e=>alert('Could not save — '+e.message));
+  }).catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
 window.saveMarketingAdjustment=function(date){
+  if(stockSaveInProgress) return;
   if(!session||session.role!=='admin'){ alert('Only admins can make corrections.'); return; }
   const note=document.getElementById('adjNote_'+date).value.trim();
   if(!note){ alert('Please enter a reason for this correction — it stays visible in the history permanently.'); return; }
   const person=mktSelectedPerson||session.name;
   const newNatural=readCategoryGrid('adjNat_'+date), newLgd=readCategoryGrid('adjLgd_'+date);
-  const row=computeLedgerForPerson(person).find(r=>r.date===date);
+  const rows=computeLedgerForPerson(person);
+  const dateIdx=rows.findIndex(r=>r.date===date);
+  const row=dateIdx>=0?rows[dateIdx]:null;
   const curNatural=(row&&row.matCats.Natural)||{}, curLgd=(row&&row.matCats.LGD)||{};
+  let totalDelta=0;
+  STOCK_CATEGORIES.forEach(cat=>{
+    totalDelta += (newNatural[cat]||0)-(curNatural[cat]||0);
+    totalDelta += (newLgd[cat]||0)-(curLgd[cat]||0);
+  });
+  if(totalDelta!==0 && dateIdx>=0){
+    let worstDay='', worstVal=0, foundNegative=false;
+    for(let i=dateIdx;i<rows.length;i++){
+      const projected=rows[i].eod+totalDelta;
+      if(projected<0 && (!foundNegative||projected<worstVal)){ foundNegative=true; worstDay=rows[i].date; worstVal=projected; }
+    }
+    if(foundNegative){
+      const proceed=confirm('This would leave a balance of '+worstVal+' on '+fmtD(new Date(worstDay+'T00:00:00').getTime())+' — meaning more was sold than was ever added on hand. This usually means a sale needs correcting too, not just this entry. Save this correction anyway?');
+      if(!proceed) return;
+    }
+  }
   const batch=db.batch();
   let any=false;
   STOCK_CATEGORIES.forEach(cat=>{
@@ -1226,7 +1258,8 @@ window.saveMarketingAdjustment=function(date){
     }
   });
   if(!any){ alert('No changes detected — nothing to save.'); return; }
-  batch.commit().catch(e=>alert('Could not save — '+e.message));
+  stockSaveInProgress=true;
+  batch.commit().then(()=>{ stockSaveInProgress=false; }).catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
 
 
@@ -1309,6 +1342,7 @@ function wireApprovalSearch(){
   });
 }
 window.saveApprovalNew=function(){
+  if(stockSaveInProgress) return;
   const input=document.getElementById('approvalRetailerSearch');
   const typedName=input.value.trim();
   const retailerName = (approvalRetailerChosen && approvalRetailerChosen.n===typedName) ? approvalRetailerChosen.n : typedName;
@@ -1317,21 +1351,24 @@ window.saveApprovalNew=function(){
   if(!countRaw || +countRaw<1){ alert('Please enter how many pieces.'); return; }
   const payload={ by:stockRpWho||session.name, foruid:session.uid, retailerName:retailerName, pieces:+countRaw, sold:0, returned:0, dateGiven:todayStr(), ts:firebase.firestore.FieldValue.serverTimestamp() };
   if(approvalRetailerChosen && approvalRetailerChosen.n===retailerName) payload.retailerId=approvalRetailerChosen.id;
+  stockSaveInProgress=true;
   db.collection(COL_APPROVAL).add(payload)
-    .then(()=>{ approvalRetailerChosen=null; })
-    .catch(e=>alert('Could not save — '+e.message));
+    .then(()=>{ stockSaveInProgress=false; approvalRetailerChosen=null; })
+    .catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
 window.saveApprovalResolve=function(id){
+  if(stockSaveInProgress) return;
   const a=approvals.find(x=>x.id===id); if(!a) return;
   const soldNow=+document.getElementById('aprSold_'+id).value||0;
   const returnedNow=+document.getElementById('aprReturned_'+id).value||0;
   if(soldNow<1 && returnedNow<1){ alert('Enter at least one of sold or returned.'); return; }
   const due=a.pieces-(a.sold||0)-(a.returned||0);
   if(soldNow+returnedNow>due){ alert('That\'s more than the '+due+' pieces still due — please check the numbers.'); return; }
+  stockSaveInProgress=true;
   db.collection(COL_APPROVAL).doc(id).update({
     sold: firebase.firestore.FieldValue.increment(soldNow),
     returned: firebase.firestore.FieldValue.increment(returnedNow)
-  }).catch(e=>alert('Could not save — '+e.message));
+  }).then(()=>{ stockSaveInProgress=false; }).catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
 
 /* ---- Repair: inline send + inline resolve ---- */
@@ -1381,23 +1418,27 @@ function drawRepairTab(cutoff,upperCutoff,canSeeAll){
   document.getElementById('stockBody').innerHTML=html;
 }
 window.saveRepairNew=function(){
+  if(stockSaveInProgress) return;
   const countRaw=document.getElementById('repairNewCount').value;
   if(!countRaw || +countRaw<1){ alert('Please enter how many pieces.'); return; }
   const remarks=document.getElementById('repairNewRemarks').value.trim();
   const payload={ by:stockRpWho||session.name, foruid:session.uid, pieces:+countRaw, returned:0, dateSent:todayStr(), ts:firebase.firestore.FieldValue.serverTimestamp() };
   if(remarks) payload.remarks=remarks;
+  stockSaveInProgress=true;
   db.collection(COL_REPAIR).add(payload)
-    .then(()=>{ document.getElementById('repairNewRemarks').value=''; })
-    .catch(e=>alert('Could not save — '+e.message));
+    .then(()=>{ stockSaveInProgress=false; document.getElementById('repairNewRemarks').value=''; })
+    .catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
 window.saveRepairResolve=function(id){
+  if(stockSaveInProgress) return;
   const r=repairs.find(x=>x.id===id); if(!r) return;
   const returnedNow=+document.getElementById('repReturned_'+id).value||0;
   const due=r.pieces-(r.returned||0);
   if(returnedNow<1){ alert('Please enter how many pieces came back.'); return; }
   if(returnedNow>due){ alert('That\'s more than the '+due+' pieces still due — please check the number.'); return; }
+  stockSaveInProgress=true;
   db.collection(COL_REPAIR).doc(id).update({ returned: firebase.firestore.FieldValue.increment(returnedNow) })
-    .catch(e=>alert('Could not save — '+e.message));
+    .then(()=>{ stockSaveInProgress=false; }).catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
 
 function getStockExportRows(){
@@ -2179,9 +2220,27 @@ document.getElementById('fDistrict').addEventListener('blur',e=>{
 });
 function resetAddForm(){
   ['fName','fTel','fDistrict','fArea','fPin','fFullAddr'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('fState').value='Telangana';
+  document.getElementById('fStateSearch').value='Telangana';
   document.getElementById('fAreaStatus').textContent='';
 }
+document.getElementById('fStateSearch').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  const box=document.getElementById('fStateSuggest');
+  if(!q.length){ box.classList.remove('show'); return; }
+  const matches=INDIA_STATES.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
+  box.innerHTML = matches.length
+    ? matches.map(s=>`<div class="sug"><span class="sn">${s}</span></div>`).join('')
+    : '<div class="none">No match</div>';
+  box.classList.add('show');
+  box.querySelectorAll('.sug').forEach((el,i)=>{
+    el.onclick=()=>{ document.getElementById('fStateSearch').value=matches[i]; box.classList.remove('show'); };
+  });
+});
+document.getElementById('fStateSearch').addEventListener('focus',e=>{ if(e.target.value) e.target.dispatchEvent(new Event('input')); });
+document.addEventListener('click',e=>{
+  const box=document.getElementById('fStateSuggest');
+  if(box && !box.contains(e.target) && e.target.id!=='fStateSearch') box.classList.remove('show');
+});
 function placeAddPin(ll){
   pendingLL=ll;
   if(addPinMarker) addPinMarker.setLatLng([ll.lat,ll.lng]);
@@ -2310,7 +2369,9 @@ function runLocationSearch(q){
 document.getElementById('fSave').onclick=()=>{
   const n=document.getElementById('fName').value.trim(); if(!n)return document.getElementById('fName').focus();
   const district=document.getElementById('fDistrict').value.trim();
-  const state=document.getElementById('fState').value;
+  const stateTyped=document.getElementById('fStateSearch').value.trim();
+  const state=INDIA_STATES.find(s=>s.toLowerCase()===stateTyped.toLowerCase());
+  if(!state){ alert('Please select a state from the list.'); document.getElementById('fStateSearch').focus(); return; }
   const pin=document.getElementById('fPin').value.trim();
   const fullAddr=document.getElementById('fFullAddr').value.trim();
   const area=document.getElementById('fArea').value.trim()||'—';
