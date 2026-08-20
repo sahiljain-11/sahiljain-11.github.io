@@ -370,6 +370,10 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <button class="btn ghost" id="zCancel">Cancel</button>
     <button class="btn" id="zSave">Create zone</button>
   </div>
+  <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--cream-4)">
+    <div class="admin-label" style="color:var(--gold)">Existing zones</div>
+    <div id="zoneManageList" style="margin-top:8px"></div>
+  </div>
 </div>
 
 <div id="locPicker">
@@ -386,7 +390,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v54.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v55.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1717,7 +1721,7 @@ document.querySelectorAll('.chip').forEach(wireChip);
 function renderCustomChips(){
   const slot=document.getElementById('customChipSlot');
   slot.innerHTML='';
-  Object.keys(customZones).forEach(id=>{
+  orderedZoneIds().forEach(id=>{
     const z=customZones[id];
     const ch=document.createElement('span');
     ch.className='chip'; ch.dataset.z=id;
@@ -1732,7 +1736,7 @@ function refreshZoneDropdowns(){
     const sel=document.getElementById(selId);
     const current=sel.value;
     sel.querySelectorAll('option[data-custom]').forEach(o=>o.remove());
-    Object.keys(customZones).forEach(id=>{
+    orderedZoneIds().forEach(id=>{
       const o=document.createElement('option');
       o.value=id; o.dataset.custom='1'; o.textContent='Custom: '+customZones[id].name;
       sel.appendChild(o);
@@ -1879,7 +1883,7 @@ window.openTripReport=function(id){
   const totalPieces=tv.reduce((s,v)=>s+(v.pieces||0),0);
   const totalStores=new Set(tv.map(v=>v.sid)).size;
   const soldCount=tv.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold'||v.outcome==='order_taken').length;
-  const flaggedCount=canSeeFlags ? tv.filter(v=>v.farCheckin).length : 0;
+  const flaggedCount=canSeeFlags ? tv.filter(v=>v.farCheckin||v.noGps).length : 0;
   let html='<div class="stat-row">'
     + `<div class="stat-box"><span class="sv">${tv.length}</span><span class="sl">Check-ins</span></div>`
     + `<div class="stat-box"><span class="sv">${totalStores}</span><span class="sl">Stores covered</span></div>`
@@ -1892,7 +1896,7 @@ window.openTripReport=function(id){
     const rows=g.log.map(v=>{
       const t2=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
       const om=outcomeMeta(v);
-      const flagTag = (v.farCheckin && canSeeFlags) ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
+      const flagTag = !canSeeFlags ? '' : v.farCheckin ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : v.noGps ? ` · <span style="color:var(--z1);font-weight:600">⚠️ No GPS</span>` : '';
       return `<div class="v-item">${v.sn} — ${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t2)} · ${v.by||'—'}${om.tag?' · '+om.tag:''}${flagTag}</div></div>`;
     }).join('');
     const areaTotal = allStores().filter(s=>!disabled[s.id] && s.a===a).length;
@@ -2077,15 +2081,61 @@ document.getElementById('wipeTestDataBtn').onclick=()=>{
 
 document.getElementById('newZoneBtn').onclick=()=>{
   document.getElementById('zName').value=''; document.getElementById('zColorPick').value='#7A5230';
+  renderZoneManageList();
   document.getElementById('zoneSheet').classList.add('open');
 };
 document.getElementById('zCancel').onclick=()=>document.getElementById('zoneSheet').classList.remove('open');
 document.getElementById('zSave').onclick=()=>{
   const name=document.getElementById('zName').value.trim(); if(!name)return document.getElementById('zName').focus();
   const color=document.getElementById('zColorPick').value;
-  db.collection(COL_ZONES).add({name:name,color:color,by:session.name,ts:firebase.firestore.FieldValue.serverTimestamp()})
-    .then(()=>document.getElementById('zoneSheet').classList.remove('open'))
+  const maxOrder=Object.values(customZones).reduce((m,z)=>Math.max(m,z.order||0),0);
+  db.collection(COL_ZONES).add({name:name,color:color,by:session.name,order:maxOrder+1,ts:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(()=>{ document.getElementById('zName').value=''; renderZoneManageList(); })
     .catch(e=>alert('Could not create zone — '+e.message));
+};
+function orderedZoneIds(){
+  return Object.keys(customZones).sort((a,b)=>(customZones[a].order||0)-(customZones[b].order||0));
+}
+function renderZoneManageList(){
+  const box=document.getElementById('zoneManageList');
+  const ids=orderedZoneIds();
+  if(!ids.length){ box.innerHTML='<div class="rm-empty">No custom zones yet.</div>'; return; }
+  box.innerHTML=ids.map((id,i)=>{
+    const z=customZones[id];
+    const storeCount=allStores().filter(s=>!disabled[s.id] && String(effectiveZone(s))===String(id)).length;
+    return `<div class="inline-card" style="padding:9px 12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${z.color};width:10px;height:10px;border-radius:50%;display:inline-block"></span>${z.name}${storeCount?` <span style="color:var(--muted);font-size:11px">(${storeCount} stores)</span>`:''}</span>
+        <span style="display:flex;gap:4px">
+          <span class="ledger-edit" style="${i===0?'opacity:.3;pointer-events:none':''}" onclick="moveZone('${id}',-1)">↑</span>
+          <span class="ledger-edit" style="${i===ids.length-1?'opacity:.3;pointer-events:none':''}" onclick="moveZone('${id}',1)">↓</span>
+          <span class="ledger-edit" style="color:var(--z1)" onclick="deleteZone('${id}')">delete</span>
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.moveZone=function(id,dir){
+  const ids=orderedZoneIds();
+  const idx=ids.indexOf(id); const swapIdx=idx+dir;
+  if(swapIdx<0||swapIdx>=ids.length) return;
+  const otherId=ids[swapIdx];
+  const myOrder=customZones[id].order||0, otherOrder=customZones[otherId].order||0;
+  const batch=db.batch();
+  batch.update(db.collection(COL_ZONES).doc(id), {order:otherOrder});
+  batch.update(db.collection(COL_ZONES).doc(otherId), {order:myOrder});
+  batch.commit().then(()=>renderZoneManageList()).catch(e=>alert('Could not reorder — '+e.message));
+};
+window.deleteZone=function(id){
+  const z=customZones[id]; if(!z) return;
+  const storeCount=allStores().filter(s=>!disabled[s.id] && String(effectiveZone(s))===String(id)).length;
+  const msg = storeCount
+    ? `${storeCount} store(s) are currently in "${z.name}". Deleting will leave them without a coverage group until you reassign them. Delete anyway?`
+    : `Delete "${z.name}"? This can't be undone.`;
+  if(!confirm(msg)) return;
+  db.collection(COL_ZONES).doc(id).delete()
+    .then(()=>renderZoneManageList())
+    .catch(e=>alert('Could not delete — '+e.message));
 };
 const suggestBox=document.getElementById('suggest');
 document.getElementById('q').addEventListener('input',e=>{
@@ -2556,6 +2606,8 @@ document.getElementById('ciSave').onclick=()=>{
         const dist=distMeters(doc.glat,doc.glng,ciStore.lat,ciStore.lng);
         if(dist>=FAR_CHECKIN_METERS){ doc.farCheckin=true; doc.distanceM=Math.round(dist); }
       }
+    }else{
+      doc.noGps=true; // location could not be captured — flagged for review rather than silently treated as fine
     }
     db.collection(COL_VISITS).add(doc)
       .then(()=>{
@@ -2574,7 +2626,7 @@ document.getElementById('ciSave').onclick=()=>{
         }
       })
       .catch(e=>{ alert('Could not save — '+e.message); saveBtn.disabled=false; saveBtn.textContent='Save check-in'; }); };
-  if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>save(p),()=>save(null),{timeout:4000,maximumAge:60000}); }
+  if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>save(p),()=>save(null),{timeout:8000,maximumAge:60000}); }
   else save(null);
 };
 
@@ -2668,7 +2720,7 @@ function drawReport(){
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     return true;
   });
-  const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin).length : 0;
+  const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin||v.noGps).length : 0;
   const stockSoldCountBase = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold').length;
   const ordersTakenCountBase = preFlagFilter.filter(v=>v.outcome==='order_taken').length;
   const piecesCountBase = preFlagFilter.reduce((s,v)=>s+(v.pieces||0),0);
@@ -2676,7 +2728,7 @@ function drawReport(){
   if(rpSubFilter==='stocksold') inRange = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold');
   else if(rpSubFilter==='orderstaken') inRange = preFlagFilter.filter(v=>v.outcome==='order_taken');
   else if(rpSubFilter==='pieces') inRange = preFlagFilter.filter(v=>(v.pieces||0)>0);
-  else if(rpSubFilter==='flagged' && canSeeAllReports) inRange = preFlagFilter.filter(v=>v.farCheckin);
+  else if(rpSubFilter==='flagged' && canSeeAllReports) inRange = preFlagFilter.filter(v=>v.farCheckin||v.noGps);
   const byArea={}, storeTotals={}, areaOfStore={};
   allStores().forEach(s=>{
     areaOfStore[s.id]=s.a;
@@ -2711,7 +2763,7 @@ function drawReport(){
     const stRows=Object.entries(g.stores).sort((x,y)=>y[1].n-x[1].n).map(([sid,st])=>{
       const log=st.log.sort((x,y)=>(y.ts?.toMillis?.()||0)-(x.ts?.toMillis?.()||0)).map(v=>{
         const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-        const flagTag = (v.farCheckin && canSeeAllReports) ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : '';
+        const flagTag = !canSeeAllReports ? '' : v.farCheckin ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : v.noGps ? ` · <span style="color:var(--z1);font-weight:600">⚠️ No GPS</span>` : '';
         const editTag = (canSeeAllReports && v.editedBy) ? ` · <span style="color:var(--muted);font-style:italic">edited by ${v.editedBy}</span>` : '';
         const editLink = canSeeAllReports ? ` · <span class="pp-toggle" style="font-size:10px" onclick="openEditVisit('${v.id}')">✎ edit</span>` : '';
         const om=outcomeMeta(v);
@@ -2793,7 +2845,7 @@ function getFilteredVisitsForExport(){
     if(rpWho && v.by!==rpWho) return false;
     if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
-    if(rpSubFilter==='flagged' && !v.farCheckin) return false;
+    if(rpSubFilter==='flagged' && !(v.farCheckin||v.noGps)) return false;
     if(rpSubFilter==='stocksold' && !(v.outcome==='sold'||v.outcome==='stock_sold')) return false;
     if(rpSubFilter==='orderstaken' && v.outcome!=='order_taken') return false;
     if(rpSubFilter==='pieces' && !((v.pieces||0)>0)) return false;
@@ -2888,12 +2940,13 @@ window.exportVisits=function(){
   const data=rows.map(v=>{
     const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
     const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
+    const flagLabel = v.farCheckin ? (v.distanceM+'m off') : v.noGps ? 'No GPS' : '';
     return {
       'Date': t?t.toLocaleDateString('en-IN'):'', 'Time': t?t.toLocaleTimeString('en-IN'):'',
       'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
       'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
       'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
-      'Remarks': v.r||'', 'GPS Lat': v.glat||'', 'GPS Lng': v.glng||''
+      'Remarks': v.r||'', 'Flag': flagLabel, 'GPS Lat': v.glat||'', 'GPS Lng': v.glng||''
     };
   });
   const ws=XLSX.utils.json_to_sheet(data);
@@ -2931,6 +2984,7 @@ function attachDataListeners(){
   activeListeners.push(db.collection(COL_ZONES).onSnapshot(s=>{
     customZones={}; s.docs.forEach(d=>customZones[d.id]=d.data());
     renderCustomChips(); refreshZoneDropdowns(); render();
+    if(document.getElementById('zoneSheet').classList.contains('open')) renderZoneManageList();
   }, e=>alert('Zones sync error: '+e.message)));
 
   activeListeners.push(db.collection(COL_TRIPS).onSnapshot(s=>{
