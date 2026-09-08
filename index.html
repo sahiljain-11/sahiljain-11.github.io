@@ -370,6 +370,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <span class="chip" data-z="61" style="color:#962B49;border-color:#962B49"><span class="dot" style="background:#962B49"></span>West Godavari</span>
     <span class="chip" data-z="62" style="color:#962B3A;border-color:#962B3A"><span class="dot" style="background:#962B3A"></span>YSR Kadapa</span>
     <span class="chip zoff off" data-z="0"><span class="dot"></span>Disabled</span>
+    <span class="chip zoff off" id="prospectsChip" style="color:var(--gold-dim);border-color:var(--gold-dim)"><span class="dot" style="background:var(--gold-dim)"></span>Prospects</span>
     <span id="customChipSlot"></span>
     <button class="btn ghost" id="newZoneBtn" style="display:none;flex:0 0 auto;padding:8px 11px;font-size:10.5px">+ Zone</button>
   </div>
@@ -404,7 +405,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v63.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v67.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -848,6 +849,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
@@ -1487,11 +1489,7 @@ function getStockExportRows(){
 window.exportStockExcel=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export stock data.'); return; }
   const data=getStockExportRows();
-  if(!data.length){ alert('Nothing to export for the current view.'); return; }
-  const ws=XLSX.utils.json_to_sheet(data);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,stockActiveTab);
-  XLSX.writeFile(wb,'bharni_stock_'+stockActiveTab+'_'+todayStr()+'.xlsx');
+  downloadStyledExcel(data, null, stockActiveTab, 'bharni_stock_'+stockActiveTab+'_'+todayStr()+'.xlsx');
 };
 window.exportStockPdf=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export stock data.'); return; }
@@ -1640,6 +1638,30 @@ function buildStats(){
   });
 }
 function fmtD(ms){ return ms?new Date(ms).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):''; }
+async function downloadStyledExcel(rows, colWidths, sheetName, filename){
+  if(!rows.length){ alert('Nothing to export for the current view.'); return; }
+  const headers=Object.keys(rows[0]);
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet(sheetName);
+  ws.columns=headers.map((h,i)=>({header:h, key:h, width:(colWidths&&colWidths[i])||15}));
+  rows.forEach(r=>ws.addRow(r));
+  ws.getRow(1).eachCell(cell=>{
+    cell.font={bold:true,color:{argb:'FF1C1712'}};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4EFE0'}};
+    cell.alignment={vertical:'middle'};
+  });
+  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:headers.length}};
+  ws.views=[{state:'frozen',ySplit:1}];
+  try{
+    const buffer=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buffer],{type:'application/octet-stream'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch(e){ alert('Could not build the Excel file — '+e.message); }
+}
 function outcomeMeta(v){
   if(v.outcome==='stock_sold' || v.outcome==='sold'){ // 'sold' kept for backward-compat with visits recorded before this split
     return {tag:`<span style="color:var(--ok);font-weight:600">✓ Stock sold${v.pieces?' · '+v.pieces+' pcs':''}</span>`, extra:''};
@@ -1715,6 +1737,7 @@ function storeSearchText(s){
 }
 const NEARBY_RADIUS_METERS = 8000; // ~8km, midpoint of the 5-10km range requested
 let nearbyCenterId=null;
+let prospectsOnlyMode=false;
 window.showNearby=function(id){
   nearbyCenterId=id;
   render();
@@ -1734,6 +1757,8 @@ function render(){
     let passes;
     if(q){
       passes = storeSearchText(s).includes(q); // search shows matches regardless of zone chips
+    }else if(prospectsOnlyMode){
+      passes = !isOff && isProspect(s);
     }else{
       passes = isOff ? zoneOn[0] : zoneOn[zk];
     }
@@ -1761,6 +1786,8 @@ function render(){
   let contextLine='';
   if(q){
     contextLine=`<b>${shown}</b> stores matching "${query.trim()}"`;
+  }else if(prospectsOnlyMode){
+    contextLine=`<b>${shown}</b> prospects — not yet converted to a sale`;
   }else if(nearbyCenter){
     contextLine=`<b>${shown}</b> stores near ${nearbyCenter.n} <span style="text-decoration:underline;cursor:pointer" onclick="clearNearby()">· clear</span>`;
   }else{
@@ -1775,14 +1802,19 @@ function wireChip(ch){
   const z=parseZoneKey(ch.dataset.z);
   if(!zoneOn[z]) ch.classList.add('off');
   ch.onclick=()=>{
-    zoneOn[z]=!zoneOn[z]; ch.classList.toggle('off',!zoneOn[z]); nearbyCenterId=null; render();
+    zoneOn[z]=!zoneOn[z]; ch.classList.toggle('off',!zoneOn[z]); nearbyCenterId=null; prospectsOnlyMode=false; render();
     if(zoneOn[z]&&z!==0&&z!==9){ // fit to newly enabled group
       const pts=allStores().filter(s=>!disabled[s.id]&&(effectiveZone(s)===z)).map(s=>[s.lat,s.lng]);
       if(pts.length) map.fitBounds(pts,{padding:[30,30]});
     }
   };
 }
-document.querySelectorAll('.chip').forEach(wireChip);
+document.querySelectorAll('.chip[data-z]').forEach(wireChip);
+document.getElementById('prospectsChip').onclick=(e)=>{
+  prospectsOnlyMode=!prospectsOnlyMode;
+  e.target.closest('.chip').classList.toggle('off',!prospectsOnlyMode);
+  nearbyCenterId=null; render();
+};
 function renderCustomChips(){
   const slot=document.getElementById('customChipSlot');
   slot.innerHTML='';
@@ -2022,13 +2054,10 @@ document.getElementById('excelExportBtn').onclick=()=>{
     'Area': s.a||'',
     'Pincode': s.pincode||'',
     'Address': s.ad||'',
+    'Prospect Status': isProspect(s) ? 'Prospect' : (s.live ? 'Converted' : ''),
     'Status': disabled[s.id] ? 'Disabled' : 'Active'
   }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:24},{wch:30},{wch:14},{wch:16},{wch:18},{wch:20},{wch:10},{wch:34},{wch:10}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Retailers');
-  XLSX.writeFile(wb,'bharni_retailers_'+todayStr()+'.xlsx');
+  downloadStyledExcel(rows, [24,30,14,16,18,20,10,34,14,10], 'Retailers', 'bharni_retailers_'+todayStr()+'.xlsx');
 };
 let pendingImportChanges=[];
 const EXCEL_FIELD_MAP=[['Name','n'],['Mobile','c'],['State','state'],['District','district'],['Area','a'],['Pincode','pincode'],['Address','ad']];
@@ -2230,7 +2259,7 @@ window.deleteZone=function(id){
 };
 const suggestBox=document.getElementById('suggest');
 document.getElementById('q').addEventListener('input',e=>{
-  query=e.target.value; nearbyCenterId=null; render(); showSuggestions(query);
+  query=e.target.value; nearbyCenterId=null; prospectsOnlyMode=false; render(); showSuggestions(query);
 });
 document.getElementById('q').addEventListener('focus',e=>{ if(e.target.value) showSuggestions(e.target.value); });
 document.addEventListener('click',e=>{
@@ -2823,11 +2852,15 @@ function drawReport(){
     return;
   }
   const qterm=rpQuery.trim().toLowerCase();
+  const isProspectSearch = qterm==='prospect' || qterm==='prospects';
+  let prospectLookup=null;
+  if(isProspectSearch){ prospectLookup={}; allStores().forEach(s=>{ prospectLookup[s.id]=isProspect(s); }); }
   const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<cutoff || t>upperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
-    if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
+    if(isProspectSearch){ if(!prospectLookup[v.sid]) return false; }
+    else if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     return true;
   });
@@ -2857,6 +2890,11 @@ function drawReport(){
   html += `<span class="pill ${rpShowCategories?'on':''}" onclick="rpShowCategories=!rpShowCategories;drawReport();" style="display:inline-block;margin-top:8px">Categories</span>`;
   if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='stocksold'?'Stock Sold':rpSubFilter==='orderstaken'?'Orders Taken':rpSubFilter==='pieces'?'Pieces Sold':'Flagged'}</b></div>`;
   if(rpWho) html+=`<div class="rp-subline">Showing: <b style="font-family:'Bodoni Moda',serif">${rpWho}</b></div>`;
+  const areaCoverage={};
+  inRange.forEach(v=>{
+    const a=v.a||areaOfStore[v.sid]||'—';
+    (areaCoverage[a]=areaCoverage[a]||new Set()).add(v.sid);
+  });
   const byDay={};
   inRange.forEach(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
@@ -2917,9 +2955,12 @@ function drawReport(){
         const prospectBadge = (storeObj && isProspect(storeObj)) ? `<span style="background:var(--gold-dim);color:#1c1712;font-size:10px;font-weight:600;border-radius:2px;padding:2px 7px;margin-left:6px">Prospect</span>` : '';
         return `<div class="store-row ${(qterm||rpSubFilter)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}${uniqueBy?' \u2014 '+uniqueBy:''}${headerTripPart}${prospectBadge}</span><span><span class="vc">${st.n}\u00d7</span>${piecesBadge}</span></div><div class="visit-log">${log}</div></div>`;
       }).join('');
+      const areaTotal=allStores().filter(s=>!disabled[s.id] && (s.a||areaOfStore[s.id])===a).length;
+      const coveredThisPeriod=areaCoverage[a]?areaCoverage[a].size:0;
+      const areaPieces=g.stores ? Object.values(g.stores).reduce((sum,st)=>sum+st.log.reduce((s2,v)=>s2+(v.pieces||0),0),0) : 0;
       html+=`<div class="area-card ${(qterm||rpSubFilter)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
         <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
-          <div class="an">${a}</div>
+          <div class="an">${a}<small>${coveredThisPeriod} of ${areaTotal||'?'} stores covered · ${areaPieces} pcs</small></div>
           <div class="ac"><b>${g.n}</b>visits</div></div>
         <div class="store-rows">${stRows}</div></div>`;
     });
@@ -2949,11 +2990,7 @@ window.exportTripVisits=function(){
       'Remarks': v.r||''
     };
   });
-  const ws=XLSX.utils.json_to_sheet(data);
-  ws['!cols']=[{wch:11},{wch:9},{wch:26},{wch:18},{wch:22},{wch:14},{wch:12},{wch:24},{wch:9},{wch:22},{wch:30},{wch:14},{wch:30}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Trip');
-  XLSX.writeFile(wb,'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.xlsx');
+  downloadStyledExcel(data, [11,9,26,18,22,14,12,24,9,22,30,14,30], 'Trip', 'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.xlsx');
 };
 function getFilteredVisitsForExport(){
   let cutoff, upperCutoff=Date.now()+864e5;
@@ -2966,11 +3003,15 @@ function getFilteredVisitsForExport(){
     cutoff = rpDays?localMidnight(rpDays-1):0;
   }
   const qterm=rpQuery.trim().toLowerCase();
+  const isProspectSearch = qterm==='prospect' || qterm==='prospects';
+  let prospectLookup=null;
+  if(isProspectSearch){ prospectLookup={}; allStores().forEach(s=>{ prospectLookup[s.id]=isProspect(s); }); }
   return visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<cutoff || t>upperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
-    if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
+    if(isProspectSearch){ if(!prospectLookup[v.sid]) return false; }
+    else if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     if(rpSubFilter==='flagged' && !(v.farCheckin||v.noGps)) return false;
     if(rpSubFilter==='stocksold' && !(v.outcome==='sold'||v.outcome==='stock_sold')) return false;
@@ -3020,12 +3061,7 @@ window.exportTripsTabExcel=function(){
       'Remarks': v.r||''
     };
   });
-  if(!data.length){ alert('Nothing to export for the current view.'); return; }
-  const ws=XLSX.utils.json_to_sheet(data);
-  ws['!cols']=[{wch:26},{wch:11},{wch:9},{wch:26},{wch:18},{wch:22},{wch:14},{wch:12},{wch:24},{wch:9},{wch:22},{wch:30},{wch:14},{wch:30}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Trips');
-  XLSX.writeFile(wb,'bharni_trips_'+todayStr()+'.xlsx');
+  downloadStyledExcel(data, [26,11,9,26,18,22,14,12,24,9,22,30,14,30], 'Trips', 'bharni_trips_'+todayStr()+'.xlsx');
 };
 window.exportTripsTabPdf=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
@@ -3033,6 +3069,8 @@ window.exportTripsTabPdf=function(){
 };
 function buildPdfFromVisits(rows, title, filename){
   if(!rows.length){ alert('Nothing to export for the current view.'); return; }
+  const prospectMap={};
+  allStores().forEach(s=>{ prospectMap[s.id]=isProspect(s); });
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
   doc.setFont('helvetica','bold'); doc.setFontSize(14);
@@ -3042,14 +3080,15 @@ function buildPdfFromVisits(rows, title, filename){
   const body = rows.map(v=>{
     const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
     const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
+    const prospectLabel = prospectMap[v.sid] ? 'Prospect' : '';
     return [
       t?t.toLocaleDateString('en-IN'):'', v.sn, v.a||'', v.by||'',
-      outcomeLabel, v.pieces||'', v.style||'', v.deliveryDate||'', v.reason||v.r||''
+      outcomeLabel, prospectLabel, v.pieces||'', v.style||'', v.deliveryDate||'', v.reason||v.r||''
     ];
   });
   doc.autoTable({
     startY: 26,
-    head: [['Date','Store','Area','Salesman','Outcome','Pieces','Style','Delivery','Notes']],
+    head: [['Date','Store','Area','Salesman','Outcome','Prospect','Pieces','Style','Delivery','Notes']],
     body: body,
     styles:{fontSize:8, cellPadding:2},
     headStyles:{fillColor:[28,23,18], textColor:[244,240,232]},
@@ -3064,6 +3103,8 @@ window.exportVisitsPdf=function(){
 window.exportVisits=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export the visit report.'); return; }
   const rows=getFilteredVisitsForExport();
+  const prospectMap={};
+  allStores().forEach(s=>{ prospectMap[s.id]=isProspect(s); });
   const data=rows.map(v=>{
     const t=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
     const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
@@ -3071,16 +3112,13 @@ window.exportVisits=function(){
     return {
       'Date': t?t.toLocaleDateString('en-IN'):'', 'Time': t?t.toLocaleTimeString('en-IN'):'',
       'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
+      'Prospect Status': prospectMap[v.sid] ? 'Prospect' : '',
       'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
       'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
       'Remarks': v.r||'', 'Flag': flagLabel, 'GPS Lat': v.glat||'', 'GPS Lng': v.glng||''
     };
   });
-  const ws=XLSX.utils.json_to_sheet(data);
-  ws['!cols']=[{wch:11},{wch:9},{wch:26},{wch:18},{wch:22},{wch:14},{wch:12},{wch:24},{wch:9},{wch:22},{wch:30},{wch:14},{wch:30},{wch:10},{wch:10}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Visits');
-  XLSX.writeFile(wb,'bharni_visits_'+todayStr()+'.xlsx');
+  downloadStyledExcel(data, [11,9,26,18,22,14,14,12,24,9,22,30,14,30,10,10], 'Visits', 'bharni_visits_'+todayStr()+'.xlsx');
 };
 
 function detachAllListeners(){
