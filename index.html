@@ -404,7 +404,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v61.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v63.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1748,10 +1748,10 @@ function render(){
     }else{
       m=L.circleMarker([s.lat,s.lng],{
         radius:s.live?10:8,
-        color:isOff?'#8f8674':(visited?'#2f7a52':'#1c1712'),
+        color:isOff?'#5c5c5c':(visited?'#2f7a52':'#1c1712'),
         weight:visited&&!isOff?2.5:1,
-        fillColor:isOff?'#b5ab98':zColor(zk),
-        fillOpacity:isOff?.55:.92,
+        fillColor:isOff?'#9a9a9a':zColor(zk),
+        fillOpacity:isOff?.75:.92,
         dashArray:isOff?'2,3':null
       }).bindPopup(()=>popupHtml(s,!!s.live));
     }
@@ -2913,7 +2913,9 @@ function drawReport(){
         const uniqueBy=[...new Set(st.log.map(v=>v.by).filter(Boolean))].join(', ');
         const uniqueTripTypes=[...new Set(st.log.map(v=>{ const tr=v.tripId?trips.find(t=>t.id===v.tripId):null; return tr?tr.type:null; }).filter(Boolean))];
         const headerTripPart = uniqueTripTypes.length ? ` · <span style="color:var(--gold)">\ud83e\uddf3 ${uniqueTripTypes.join(', ')}</span>` : '';
-        return `<div class="store-row ${(qterm||rpSubFilter)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}${uniqueBy?' \u2014 '+uniqueBy:''}${headerTripPart}</span><span><span class="vc">${st.n}\u00d7</span>${piecesBadge}</span></div><div class="visit-log">${log}</div></div>`;
+        const storeObj = allStores().find(s=>s.id===sid);
+        const prospectBadge = (storeObj && isProspect(storeObj)) ? `<span style="background:var(--gold-dim);color:#1c1712;font-size:10px;font-weight:600;border-radius:2px;padding:2px 7px;margin-left:6px">Prospect</span>` : '';
+        return `<div class="store-row ${(qterm||rpSubFilter)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}${uniqueBy?' \u2014 '+uniqueBy:''}${headerTripPart}${prospectBadge}</span><span><span class="vc">${st.n}\u00d7</span>${piecesBadge}</span></div><div class="visit-log">${log}</div></div>`;
       }).join('');
       html+=`<div class="area-card ${(qterm||rpSubFilter)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
         <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
