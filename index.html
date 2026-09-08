@@ -404,7 +404,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v58.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v61.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1029,7 +1029,7 @@ function stockCutoffs(){
     cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
     upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
   }else{
-    cutoff = stockRpDays?Date.now()-stockRpDays*864e5:0;
+    cutoff = stockRpDays?localMidnight(stockRpDays-1):0;
   }
   return {cutoff,upperCutoff};
 }
@@ -1536,6 +1536,12 @@ function localDateStr(ms){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
+function localMidnight(daysAgo){
+  const d=new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()-daysAgo);
+  return d.getTime();
+}
 function updateReminderBadge(){
   const due=reminders.filter(r=>!r.done && r.date<=todayStr()).length;
   const badge=document.getElementById('rmBadge');
@@ -1913,8 +1919,11 @@ function updateTripBadge(){
 }
 function drawTripsTabBody(cutoff, upperCutoff, canSeeAllReports){
   const filteredTrips = trips.filter(t=>{
-    const startMs = new Date(t.startDate+'T00:00:00').getTime();
-    if(startMs<cutoff || startMs>upperCutoff) return false;
+    const isActive = !t.endDate;
+    if(!isActive){
+      const startMs = new Date(t.startDate+'T00:00:00').getTime();
+      if(startMs<cutoff || startMs>upperCutoff) return false;
+    } // active trips are always current — never hidden by a period filter, regardless of when they started
     if(!canSeeAllReports){
       const involved = t.by===session.name || visits.some(v=>v.tripId===t.id && v.by===session.name);
       if(!involved) return false;
@@ -2795,7 +2804,7 @@ function drawReport(){
     cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
     upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
   }else{
-    cutoff = rpDays?Date.now()-rpDays*864e5:0;
+    cutoff = rpDays?localMidnight(rpDays-1):0;
   }
   if(!canSeeAllReports){
     const oneYearAgo=Date.now()-365*864e5;
@@ -2831,20 +2840,8 @@ function drawReport(){
   else if(rpSubFilter==='orderstaken') inRange = preFlagFilter.filter(v=>v.outcome==='order_taken');
   else if(rpSubFilter==='pieces') inRange = preFlagFilter.filter(v=>(v.pieces||0)>0);
   else if(rpSubFilter==='flagged' && canSeeAllReports) inRange = preFlagFilter.filter(v=>v.farCheckin||v.noGps);
-  const byArea={}, storeTotals={}, areaOfStore={};
-  allStores().forEach(s=>{
-    areaOfStore[s.id]=s.a;
-    if(disabled[s.id]) return;                    // disabled stores excluded from denominators
-    (storeTotals[s.a]=storeTotals[s.a]||new Set()).add(s.id);
-  });
-  inRange.forEach(v=>{
-    const a=v.a||areaOfStore[v.sid]||'—';
-    const g=byArea[a]||(byArea[a]={n:0,stores:{},z:v.z});
-    g.n++;
-    const st=g.stores[v.sid]||(g.stores[v.sid]={sn:v.sn,n:0,log:[]});
-    st.n++; st.log.push(v);
-  });
-  const areas=Object.entries(byArea).sort((x,y)=>y[1].n-x[1].n);
+  const areaOfStore={};
+  allStores().forEach(s=>{ areaOfStore[s.id]=s.a; });
   const activeStores=allStores().filter(s=>!disabled[s.id]).length;
   const visitedStores=new Set(preFlagFilter.map(v=>v.sid)).size;
   const covPct = activeStores>0 ? Math.round(100*visitedStores/activeStores) : 0;
@@ -2860,44 +2857,70 @@ function drawReport(){
   html += `<span class="pill ${rpShowCategories?'on':''}" onclick="rpShowCategories=!rpShowCategories;drawReport();" style="display:inline-block;margin-top:8px">Categories</span>`;
   if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='stocksold'?'Stock Sold':rpSubFilter==='orderstaken'?'Orders Taken':rpSubFilter==='pieces'?'Pieces Sold':'Flagged'}</b></div>`;
   if(rpWho) html+=`<div class="rp-subline">Showing: <b style="font-family:'Bodoni Moda',serif">${rpWho}</b></div>`;
-  if(!areas.length) html+='<div style="color:#8a8272;font-size:13px">No check-ins in this period yet. Open a store pin on the map and tap “Check in”.</div>';
-  areas.forEach(([a,g])=>{
-    const stRows=Object.entries(g.stores).sort((x,y)=>y[1].n-x[1].n).map(([sid,st])=>{
-      const log=st.log.sort((x,y)=>(y.ts?.toMillis?.()||0)-(x.ts?.toMillis?.()||0)).map(v=>{
-        const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-        const flagTag = !canSeeAllReports ? '' : v.farCheckin ? ` · <span style="color:var(--z1);font-weight:600">⚠️ ${v.distanceM}m off</span>` : v.noGps ? ` · <span style="color:var(--z1);font-weight:600">⚠️ No GPS</span>` : '';
-        const editTag = (canSeeAllReports && v.editedBy) ? ` · <span style="color:var(--muted);font-style:italic">edited by ${v.editedBy}</span>` : '';
-        const editLink = canSeeAllReports ? ` · <span class="pp-toggle" style="font-size:10px" onclick="openEditVisit('${v.id}')">✎ edit</span>` : '';
-        const om=outcomeMeta(v);
-        let catTag='';
-        if(rpShowCategories && v.outcome==='stock_sold'){
-          let summary='';
-          if(v.categoryBreakdown){
-            summary=Object.entries(v.categoryBreakdown).map(([mat,cats])=>
-              Object.entries(cats).map(([c,n])=>`${n} ${mat} ${c}`).join(', ')
-            ).filter(Boolean).join(', ');
-          }else if(v.category){
-            summary=`${v.pieces||''} ${v.category}`;
+  const byDay={};
+  inRange.forEach(v=>{
+    const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
+    const dateKey = t ? localDateStr(t) : 'unknown';
+    (byDay[dateKey]=byDay[dateKey]||[]).push(v);
+  });
+  const dayKeys=Object.keys(byDay).sort().reverse();
+  if(!dayKeys.length) html+='<div style="color:#8a8272;font-size:13px;margin-top:10px">No check-ins in this period yet. Open a store pin on the map and tap \u201cCheck in\u201d.</div>';
+  const today=todayStr();
+  dayKeys.forEach(dateKey=>{
+    const dayVisits=byDay[dateKey];
+    const dayLabel = dateKey==='unknown' ? 'Unknown date' : fmtD(new Date(dateKey+'T00:00:00').getTime());
+    html += `<div style="display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--gold-dim)">
+      <span style="font-family:'Cinzel',serif;font-weight:600;font-size:14px">${dateKey===today?'Today · ':''}${dayLabel}</span>
+      <span style="font-size:11px;color:var(--muted)">${dayVisits.length} check-in${dayVisits.length===1?'':'s'}</span>
+    </div>`;
+    const byArea={};
+    dayVisits.forEach(v=>{
+      const a=v.a||areaOfStore[v.sid]||'—';
+      const g=byArea[a]||(byArea[a]={n:0,stores:{},z:v.z});
+      g.n++;
+      const st=g.stores[v.sid]||(g.stores[v.sid]={sn:v.sn,n:0,log:[]});
+      st.n++; st.log.push(v);
+    });
+    const areas=Object.entries(byArea).sort((x,y)=>y[1].n-x[1].n);
+    areas.forEach(([a,g])=>{
+      const stRows=Object.entries(g.stores).sort((x,y)=>y[1].n-x[1].n).map(([sid,st])=>{
+        const log=st.log.sort((x,y)=>(y.ts?.toMillis?.()||0)-(x.ts?.toMillis?.()||0)).map(v=>{
+          const t2=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
+          const timeStr = t2 ? new Date(t2).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}) : '';
+          const flagTag = !canSeeAllReports ? '' : v.farCheckin ? ` · <span style="color:var(--z1);font-weight:600">\u26a0\ufe0f ${v.distanceM}m off</span>` : v.noGps ? ` · <span style="color:var(--z1);font-weight:600">\u26a0\ufe0f No GPS</span>` : '';
+          const editTag = (canSeeAllReports && v.editedBy) ? ` · <span style="color:var(--muted);font-style:italic">edited by ${v.editedBy}</span>` : '';
+          const editLink = canSeeAllReports ? ` · <span class="pp-toggle" style="font-size:10px" onclick="openEditVisit('${v.id}')">\u270e edit</span>` : '';
+          const trip = v.tripId ? trips.find(tr=>tr.id===v.tripId) : null;
+          const tripTag = trip ? ` · <span style="color:var(--gold)">\ud83e\uddf3 ${trip.type}</span>` : '';
+          const om=outcomeMeta(v);
+          let catTag='';
+          if(rpShowCategories && v.outcome==='stock_sold'){
+            let summary='';
+            if(v.categoryBreakdown){
+              summary=Object.entries(v.categoryBreakdown).map(([mat,cats])=>
+                Object.entries(cats).map(([c,n])=>`${n} ${mat} ${c}`).join(', ')
+              ).filter(Boolean).join(', ');
+            }else if(v.category){
+              summary=`${v.pieces||''} ${v.category}`;
+            }
+            if(summary) catTag = ` · <span style="color:var(--gold)">${summary}</span>`;
           }
-          if(summary) catTag = ` · <span style="color:var(--gold)">${summary}</span>`;
-        }
-        const outcomeTag = om.tag ? ` · ${om.tag}${catTag}` : '';
-        return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${fmtD(t)} · ${v.by||'—'}${v.glat?' · 📍':''}${flagTag}${outcomeTag}${editTag}${editLink}</div></div>`;
+          const outcomeTag = om.tag ? ` · ${om.tag}${catTag}` : '';
+          return `<div class="v-item">${v.r?v.r:'<i>no remarks</i>'}${om.extra}<div class="vm">${timeStr} · ${v.by||'—'}${v.glat?' · \ud83d\udccd':''}${flagTag}${outcomeTag}${tripTag}${editTag}${editLink}</div></div>`;
+        }).join('');
+        const storePieces = st.log.reduce((sum,v)=>sum+(v.pieces||0),0);
+        const piecesBadge = `<span class="vc" style="color:${storePieces>0?'var(--gold)':'var(--cream-4)'};margin-left:6px">${storePieces} pcs</span>`;
+        const uniqueBy=[...new Set(st.log.map(v=>v.by).filter(Boolean))].join(', ');
+        const uniqueTripTypes=[...new Set(st.log.map(v=>{ const tr=v.tripId?trips.find(t=>t.id===v.tripId):null; return tr?tr.type:null; }).filter(Boolean))];
+        const headerTripPart = uniqueTripTypes.length ? ` · <span style="color:var(--gold)">\ud83e\uddf3 ${uniqueTripTypes.join(', ')}</span>` : '';
+        return `<div class="store-row ${(qterm||rpSubFilter)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}${uniqueBy?' \u2014 '+uniqueBy:''}${headerTripPart}</span><span><span class="vc">${st.n}\u00d7</span>${piecesBadge}</span></div><div class="visit-log">${log}</div></div>`;
       }).join('');
-      const storePieces = st.log.reduce((sum,v)=>sum+(v.pieces||0),0);
-      const piecesBadge = `<span class="vc" style="color:${storePieces>0?'var(--gold)':'var(--cream-4)'};margin-left:6px">${storePieces} pcs</span>`;
-      return `<div class="store-row ${(qterm||rpSubFilter)?'open':''}" onclick="this.classList.toggle('open')"><div class="sn"><span>${st.sn}</span><span><span class="vc">${st.n}×</span>${piecesBadge}</span></div><div class="visit-log">${log}</div></div>`;
-    }).join('');
-    const covered=Object.keys(g.stores).length, inArea=(storeTotals[a]||new Set()).size;
-    const areaPieces=Object.values(g.stores).reduce((sum,st)=>sum+st.log.reduce((s2,v)=>s2+(v.pieces||0),0),0);
-    const areaPiecesNote = ` · <b>${areaPieces}</b> pcs`;
-    const covPct = inArea>0 ? Math.round(100*covered/inArea) : 0;
-    html+=`<div class="area-card ${(qterm||rpSubFilter)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
-      <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
-        <div class="an">${a}<small>${covered} of ${inArea||'?'} active stores covered</small></div>
-        <div class="ac"><b>${g.n}</b>visits${areaPiecesNote}</div></div>
-      <div class="area-progress"><div class="area-progress-fill" style="width:${covPct}%"></div></div>
-      <div class="store-rows">${stRows}</div></div>`;
+      html+=`<div class="area-card ${(qterm||rpSubFilter)?'open':''}"><div class="zbar" style="background:${zColor(g.z)}"></div>
+        <div class="area-head" onclick="this.parentElement.classList.toggle('open')">
+          <div class="an">${a}</div>
+          <div class="ac"><b>${g.n}</b>visits</div></div>
+        <div class="store-rows">${stRows}</div></div>`;
+    });
   });
   document.getElementById('rpBody').innerHTML=html;
 }
@@ -2938,7 +2961,7 @@ function getFilteredVisitsForExport(){
     cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
     upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
   }else{
-    cutoff = rpDays?Date.now()-rpDays*864e5:0;
+    cutoff = rpDays?localMidnight(rpDays-1):0;
   }
   const qterm=rpQuery.trim().toLowerCase();
   return visits.filter(v=>{
@@ -2963,7 +2986,7 @@ function getFilteredTripVisitsForExport(){
     cutoff = fromVal ? new Date(fromVal+'T00:00:00').getTime() : 0;
     upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
   }else{
-    cutoff = rpDays?Date.now()-rpDays*864e5:0;
+    cutoff = rpDays?localMidnight(rpDays-1):0;
   }
   const filteredTrips = trips.filter(t=>{
     const startMs=new Date(t.startDate+'T00:00:00').getTime();
