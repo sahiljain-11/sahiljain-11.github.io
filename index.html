@@ -405,7 +405,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v67.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v68.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1032,6 +1032,10 @@ function stockCutoffs(){
     upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
   }else{
     cutoff = stockRpDays?localMidnight(stockRpDays-1):0;
+  }
+  if(!(session && session.role==='admin')){
+    const oneYearAgo=Date.now()-365*864e5;
+    if(cutoff===0 || cutoff<oneYearAgo) cutoff=oneYearAgo; // enforced at the source, not just at the button
   }
   return {cutoff,upperCutoff};
 }
@@ -3002,6 +3006,10 @@ function getFilteredVisitsForExport(){
   }else{
     cutoff = rpDays?localMidnight(rpDays-1):0;
   }
+  if(!(session && (session.role==='admin'||session.role==='manager'))){
+    const oneYearAgo=Date.now()-365*864e5;
+    if(cutoff===0 || cutoff<oneYearAgo) cutoff=oneYearAgo; // enforced at the source, not just at the export button
+  }
   const qterm=rpQuery.trim().toLowerCase();
   const isProspectSearch = qterm==='prospect' || qterm==='prospects';
   let prospectLookup=null;
@@ -3030,6 +3038,10 @@ function getFilteredTripVisitsForExport(){
     upperCutoff = toVal ? new Date(toVal+'T23:59:59').getTime() : upperCutoff;
   }else{
     cutoff = rpDays?localMidnight(rpDays-1):0;
+  }
+  if(!canSeeAllReports){
+    const oneYearAgo=Date.now()-365*864e5;
+    if(cutoff===0 || cutoff<oneYearAgo) cutoff=oneYearAgo; // enforced at the source, not just at the export button
   }
   const filteredTrips = trips.filter(t=>{
     const startMs=new Date(t.startDate+'T00:00:00').getTime();
