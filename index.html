@@ -405,7 +405,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v70.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v71.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1871,7 +1871,7 @@ const syncRpZoneSearch=wireZoneSearch('rpZoneSearch','rpZoneSuggest','rpZoneSele
 function populateReportZoneFilter(){
   const sel=document.getElementById('rpZoneSelect');
   const current=sel.value;
-  const entries=Object.keys(ZN).map(k=>[k,ZN[k]]).concat(Object.keys(customZones).map(id=>[id,customZones[id].name]));
+  const entries=Object.keys(ZN).filter(k=>k!=='9').map(k=>[k,ZN[k]]).concat(Object.keys(customZones).map(id=>[id,customZones[id].name]));
   entries.sort((a,b)=>a[1].localeCompare(b[1]));
   sel.innerHTML='<option value="">All areas / districts</option>'+
     entries.map(([code,name])=>`<option value="${code}">${name}</option>`).join('');
