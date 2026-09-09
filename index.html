@@ -405,7 +405,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v68.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v70.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -2813,6 +2813,52 @@ window.setRpSubFilter=function(key){
   rpSubFilter = (rpSubFilter===key) ? '' : key;
   drawReport();
 };
+function drawStoreStatusList(statusKeyword){
+  const canDisable = session && (session.role==='admin' || session.role==='sales');
+  const canDelete = session && session.role==='admin';
+  let matchingStores, title;
+  if(statusKeyword==='disabled'){
+    matchingStores = allStores().filter(s=>disabled[s.id]).sort((a,b)=>a.n.localeCompare(b.n));
+    title = 'Disabled stores';
+  }else{
+    matchingStores = allStores().filter(s=>!disabled[s.id] && isProspect(s)).sort((a,b)=>a.n.localeCompare(b.n));
+    title = 'Prospects';
+  }
+  let html = `<div class="stat-row"><div class="stat-box"><span class="sv">${matchingStores.length}</span><span class="sl">${title}</span></div></div>`;
+  if(!matchingStores.length){
+    html += `<div class="rm-empty">No ${statusKeyword==='disabled'?'disabled':'prospect'} stores found.</div>`;
+  }else{
+    html += matchingStores.map(s=>{
+      let actions='';
+      if(statusKeyword==='disabled'){
+        if(canDisable) actions += `<span class="pp-toggle" onclick="enableStoreFromReport('${s.id}')">Enable</span>`;
+        if(canDelete) actions += (actions?' · ':'')+`<span class="pp-toggle" style="color:var(--z1)" onclick="deleteStoreFromReport('${s.id}')">Delete</span>`;
+      }
+      return `<div class="v-item">
+        <b style="font-family:'Cinzel',serif;font-size:13.5px">${s.n}</b>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">${s.a||''}</div>
+        <div class="vm">${s.c?('📞 '+s.c):''}${actions?(s.c?' · ':'')+actions:''}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('rpBody').innerHTML=html;
+}
+window.enableStoreFromReport=function(id){
+  if(!session||(session.role!=='admin'&&session.role!=='sales')) return;
+  db.collection(COL_DISABLED).doc(id).delete().catch(e=>alert('Could not enable — '+e.message));
+};
+window.deleteStoreFromReport=function(id){
+  if(!session||session.role!=='admin') return;
+  const store=allStores().find(s=>s.id===id); if(!store) return;
+  const warn = store.live
+    ? 'Remove this retailer for everyone? This cannot be undone.'
+    : 'Remove this retailer for everyone? It will disappear from the map for the whole team. An admin can restore it later in Firestore (map_overrides) if needed.';
+  if(!confirm(warn)) return;
+  const task = store.live
+    ? db.collection(COL_RETAILERS).doc(id).delete()
+    : db.collection(COL_OVERRIDES).doc(id).set({deleted:true},{merge:true});
+  task.catch(e=>alert('Could not remove — '+e.message));
+};
 function drawReport(){
   const canSeeAllReports = session && (session.role==='admin' || session.role==='manager');
   if(!canSeeAllReports) rpWho=session.name; // sales can only ever see their own data
@@ -2856,15 +2902,15 @@ function drawReport(){
     return;
   }
   const qterm=rpQuery.trim().toLowerCase();
-  const isProspectSearch = qterm==='prospect' || qterm==='prospects';
-  let prospectLookup=null;
-  if(isProspectSearch){ prospectLookup={}; allStores().forEach(s=>{ prospectLookup[s.id]=isProspect(s); }); }
+  if(qterm==='disabled' || qterm==='prospect' || qterm==='prospects'){
+    drawStoreStatusList(qterm==='disabled' ? 'disabled' : 'prospect');
+    return;
+  }
   const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<cutoff || t>upperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
-    if(isProspectSearch){ if(!prospectLookup[v.sid]) return false; }
-    else if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
+    if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     return true;
   });
@@ -3012,11 +3058,17 @@ function getFilteredVisitsForExport(){
   }
   const qterm=rpQuery.trim().toLowerCase();
   const isProspectSearch = qterm==='prospect' || qterm==='prospects';
+  const canSeeAllForExport = session && (session.role==='admin'||session.role==='manager');
   let prospectLookup=null;
-  if(isProspectSearch){ prospectLookup={}; allStores().forEach(s=>{ prospectLookup[s.id]=isProspect(s); }); }
+  let effCutoff=cutoff, effUpperCutoff=upperCutoff;
+  if(isProspectSearch){
+    prospectLookup={}; allStores().forEach(s=>{ prospectLookup[s.id]=isProspect(s); });
+    effCutoff = canSeeAllForExport ? 0 : Date.now()-365*864e5;
+    effUpperCutoff = Date.now()+864e5;
+  }
   return visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
-    if(t<cutoff || t>upperCutoff) return false;
+    if(t<effCutoff || t>effUpperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
     if(isProspectSearch){ if(!prospectLookup[v.sid]) return false; }
     else if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
