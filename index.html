@@ -316,6 +316,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     <button class="btn ghost" id="rmBtn">Reminders<span id="rmBadge" style="display:none"></span></button>
     <button class="btn ghost" id="rpBtn">Report</button>
     <button class="btn ghost" id="excelBtn" style="display:none">Excel</button>
+    <button class="btn ghost" id="goldRateBtn">Gold Rate</button>
     <button class="btn ghost" id="stockBtn">Stock</button>
   </div>
   <div class="chip-strip">
@@ -377,6 +378,29 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
 </header>
 <div id="map"></div>
 
+<div id="goldRateReminder" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;max-width:420px;margin:0 auto;background:#fff;border:1px solid var(--gold-dim);border-radius:4px;padding:12px 14px;box-shadow:0 6px 20px rgba(28,23,18,.25);z-index:1400">
+  <div style="font-size:12.5px;color:var(--ink)">Don't forget to log today's gold rate.</div>
+  <div style="margin-top:8px;display:flex;gap:8px">
+    <button class="btn ghost" id="goldRateReminderDismiss" style="flex:1;padding:7px;font-size:11px">Later</button>
+    <button class="btn" id="goldRateReminderOpen" style="flex:1;padding:7px;font-size:11px">Log now</button>
+  </div>
+</div>
+
+<div class="sheet" id="goldRateSheet">
+  <h3>Today's gold rate</h3>
+  <label>Rate per gram (₹)</label>
+  <input id="goldRateInput" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 7245.50">
+  <div class="sheet-btns">
+    <button class="btn ghost" id="goldRateCancel">Close</button>
+    <button class="btn" id="goldRateSave">Save</button>
+  </div>
+  <div class="sub" style="margin-top:14px" id="goldRateTodayList"></div>
+  <div id="goldRateAdminZone" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--cream-4)">
+    <div class="admin-label" style="color:var(--gold)">Full history</div>
+    <button class="btn ghost" id="goldRateExportBtn" style="width:100%;margin-top:8px">⬇ Download Excel</button>
+  </div>
+</div>
+
 <div class="sheet" id="zoneSheet">
   <h3>Create a new zone</h3>
   <label>Zone name</label><input id="zName" placeholder="e.g. Vizag Belt">
@@ -405,7 +429,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v71.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v73.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -875,6 +899,7 @@ const COL_TRIPS = "map_trips";
 const COL_CARRY = "map_carry";
 const COL_APPROVAL = "map_approval";
 const COL_REPAIR = "map_repair";
+const COL_GOLDRATE = "map_goldrate";
 const USERNAME_DOMAIN = "bharnigems.local";  // internal only — your team never sees this
 /* ============================================================
    STEP 3 — CREATE YOUR TEAM'S LOGIN ACCOUNTS (username-based)
@@ -928,7 +953,7 @@ let trips=[], editingTripId=null, currentTripReportId=null;
 let session=null; // {uid,name,role,email}
 function closeAllOverlays(){
   ['addSheet','editSheet','ciSheet','tripSheet','excelSheet','editVisitSheet','newReminderSheet',
-   'locPicker'].forEach(id=>{
+   'goldRateSheet','zoneSheet','locPicker'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.remove('open');
   });
   ['reminders','tripReportPanel','report','stockPage'].forEach(id=>{
@@ -975,6 +1000,69 @@ function enterApp(profile){
 }
 
 let reminders=[];
+let goldRateEntries=[], goldRateAutoPromptShown=false, goldRateSaveInProgress=false;
+document.getElementById('goldRateBtn').onclick=()=>{
+  if(!session){ alert('Please sign in first.'); return; }
+  closeAllOverlays();
+  document.getElementById('goldRateInput').value='';
+  document.getElementById('goldRateAdminZone').style.display = session.role==='admin' ? '' : 'none';
+  renderGoldRateTodayList();
+  document.getElementById('goldRateSheet').classList.add('open');
+};
+document.getElementById('goldRateCancel').onclick=()=>document.getElementById('goldRateSheet').classList.remove('open');
+document.getElementById('goldRateSave').onclick=()=>{
+  if(goldRateSaveInProgress) return;
+  const raw=document.getElementById('goldRateInput').value;
+  if(!raw || +raw<=0){ alert('Please enter a valid rate.'); return; }
+  goldRateSaveInProgress=true;
+  db.collection(COL_GOLDRATE).add({
+    rate:+raw, by:session.name, foruid:session.uid, date:todayStr(),
+    ts:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    goldRateSaveInProgress=false;
+    document.getElementById('goldRateInput').value='';
+    renderGoldRateTodayList();
+  }).catch(e=>{ goldRateSaveInProgress=false; alert('Could not save — '+e.message); });
+};
+function renderGoldRateTodayList(){
+  if(!session) return;
+  const today=todayStr();
+  const mine=goldRateEntries.filter(e=>e.foruid===session.uid && e.date===today)
+    .sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0));
+  if(!mine.length){ document.getElementById('goldRateTodayList').textContent='Nothing logged yet today.'; return; }
+  const lines=mine.map(e=>{
+    const t=e.ts&&e.ts.toMillis?e.ts.toMillis():0;
+    const timeStr=t?new Date(t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}):'';
+    return `₹${e.rate} ${timeStr?'· '+timeStr:''}`;
+  }).join('<br>');
+  document.getElementById('goldRateTodayList').innerHTML='Logged today:<br>'+lines;
+}
+window.exportGoldRateExcel=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export this.'); return; }
+  const rows=goldRateEntries.slice().sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0)).map(e=>{
+    const t=e.ts&&e.ts.toMillis?new Date(e.ts.toMillis()):null;
+    return {
+      'Date':e.date||'', 'Time':t?t.toLocaleTimeString('en-IN'):'',
+      'Rate per gram (₹)':e.rate, 'Logged by':e.by||''
+    };
+  });
+  downloadStyledExcel(rows, [12,10,18,20], 'Gold Rate', 'bharni_gold_rate_'+todayStr()+'.xlsx');
+};
+document.getElementById('goldRateExportBtn').onclick=()=>exportGoldRateExcel();
+function checkGoldRateAutoPrompt(){
+  if(!session || goldRateAutoPromptShown) return;
+  const today=todayStr();
+  const hasLoggedToday=goldRateEntries.some(e=>e.foruid===session.uid && e.date===today);
+  if(!hasLoggedToday){
+    goldRateAutoPromptShown=true;
+    document.getElementById('goldRateReminder').style.display='block';
+  }
+}
+document.getElementById('goldRateReminderDismiss').onclick=()=>{ document.getElementById('goldRateReminder').style.display='none'; };
+document.getElementById('goldRateReminderOpen').onclick=()=>{
+  document.getElementById('goldRateReminder').style.display='none';
+  document.getElementById('goldRateBtn').click();
+};
 let carryEntries=[], approvals=[], repairs=[];
 const STOCK_CATEGORIES=['Mix','Nosepin','Earrings','Rings','Tanmania','Bracelet','Necklace','Vaddanam','Pendant','Bangle'];
 const STOCK_MATERIALS=['Natural','LGD'];
@@ -2818,31 +2906,67 @@ function drawStoreStatusList(statusKeyword){
   const canDelete = session && session.role==='admin';
   let matchingStores, title;
   if(statusKeyword==='disabled'){
-    matchingStores = allStores().filter(s=>disabled[s.id]).sort((a,b)=>a.n.localeCompare(b.n));
+    matchingStores = allStores().filter(s=>disabled[s.id])
+      .sort((a,b)=>{
+        const tb=(disabled[b.id]&&disabled[b.id].ts&&disabled[b.id].ts.toMillis)?disabled[b.id].ts.toMillis():0;
+        const ta=(disabled[a.id]&&disabled[a.id].ts&&disabled[a.id].ts.toMillis)?disabled[a.id].ts.toMillis():0;
+        return tb-ta;
+      });
     title = 'Disabled stores';
   }else{
-    matchingStores = allStores().filter(s=>!disabled[s.id] && isProspect(s)).sort((a,b)=>a.n.localeCompare(b.n));
+    matchingStores = allStores().filter(s=>!disabled[s.id] && isProspect(s))
+      .sort((a,b)=>{
+        const tb=(b.ts&&b.ts.toMillis)?b.ts.toMillis():0;
+        const ta=(a.ts&&a.ts.toMillis)?a.ts.toMillis():0;
+        return tb-ta;
+      });
     title = 'Prospects';
   }
   let html = `<div class="stat-row"><div class="stat-box"><span class="sv">${matchingStores.length}</span><span class="sl">${title}</span></div></div>`;
   if(!matchingStores.length){
     html += `<div class="rm-empty">No ${statusKeyword==='disabled'?'disabled':'prospect'} stores found.</div>`;
   }else{
+    const canTrackCalls = session && session.role==='admin';
     html += matchingStores.map(s=>{
       let actions='';
       if(statusKeyword==='disabled'){
         if(canDisable) actions += `<span class="pp-toggle" onclick="enableStoreFromReport('${s.id}')">Enable</span>`;
         if(canDelete) actions += (actions?' · ':'')+`<span class="pp-toggle" style="color:var(--z1)" onclick="deleteStoreFromReport('${s.id}')">Delete</span>`;
       }
+      let callTrack='';
+      if(statusKeyword!=='disabled' && canTrackCalls){
+        const badge = s.calledStatus
+          ? `<span class="sc-done-badge">✓ Called${s.calledBy?' — '+s.calledBy:''}</span>`
+          : `<span class="sc-due-badge">Not called yet</span>`;
+        const remarkVal = (s.callRemark||'').replace(/"/g,'&quot;');
+        callTrack = `<div style="margin-top:6px">${badge}</div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--cream-4)">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+              <input type="checkbox" id="calledChk_${s.id}" ${s.calledStatus?'checked':''}> Called from office
+            </label>
+            <input id="callRemark_${s.id}" placeholder="Remark (optional)" value="${remarkVal}" style="margin-top:6px">
+            <button class="btn ghost" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="saveProspectCall('${s.id}')">Save</button>
+          </div>`;
+      }
       return `<div class="v-item">
         <b style="font-family:'Cinzel',serif;font-size:13.5px">${s.n}</b>
         <div style="font-size:11px;color:var(--muted);margin-top:1px">${s.a||''}</div>
         <div class="vm">${s.c?('📞 '+s.c):''}${actions?(s.c?' · ':'')+actions:''}</div>
+        ${callTrack}
       </div>`;
     }).join('');
   }
   document.getElementById('rpBody').innerHTML=html;
 }
+window.saveProspectCall=function(id){
+  if(!session||session.role!=='admin'){ alert('Only admins can update this.'); return; }
+  const checked=document.getElementById('calledChk_'+id).checked;
+  const remark=document.getElementById('callRemark_'+id).value.trim();
+  db.collection(COL_RETAILERS).doc(id).update({
+    calledStatus:checked, callRemark:remark, calledBy:session.name,
+    calledAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(e=>alert('Could not save — '+e.message));
+};
 window.enableStoreFromReport=function(id){
   if(!session||(session.role!=='admin'&&session.role!=='sales')) return;
   db.collection(COL_DISABLED).doc(id).delete().catch(e=>alert('Could not enable — '+e.message));
@@ -2902,8 +3026,10 @@ function drawReport(){
     return;
   }
   const qterm=rpQuery.trim().toLowerCase();
-  if(qterm==='disabled' || qterm==='prospect' || qterm==='prospects'){
-    drawStoreStatusList(qterm==='disabled' ? 'disabled' : 'prospect');
+  const isProspectKeyword = qterm.length>=3 && 'prospects'.startsWith(qterm);
+  const isDisabledKeyword = qterm.length>=3 && 'disabled'.startsWith(qterm);
+  if(isDisabledKeyword || isProspectKeyword){
+    drawStoreStatusList(isDisabledKeyword ? 'disabled' : 'prospect');
     return;
   }
   const preFlagFilter=visits.filter(v=>{
@@ -3243,6 +3369,14 @@ function attachDataListeners(){
     repairs=s.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(document.getElementById('stockPage').classList.contains('open')) drawStockPage();
   }, e=>alert('Repair sync error: '+e.message)));
+  const goldRateQuery = isAdmin ? db.collection(COL_GOLDRATE) : db.collection(COL_GOLDRATE).where('foruid','==',session.uid);
+  activeListeners.push(goldRateQuery.onSnapshot(s=>{
+    goldRateEntries=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    if(document.getElementById('goldRateSheet').classList.contains('open')) renderGoldRateTodayList();
+    const hasLoggedToday=goldRateEntries.some(e=>e.foruid===session.uid && e.date===todayStr());
+    if(hasLoggedToday) document.getElementById('goldRateReminder').style.display='none';
+    else checkGoldRateAutoPrompt();
+  }, e=>alert('Gold rate sync error: '+e.message)));
 }
 
 populateReportZoneFilter();
@@ -3257,7 +3391,7 @@ try{
     if(!user){
       session=null;
       detachAllListeners();
-      liveStores=[]; visits=[]; disabled={}; overrides={}; customZones={}; trips=[]; carryEntries=[]; approvals=[]; repairs=[];
+      liveStores=[]; visits=[]; disabled={}; overrides={}; customZones={}; trips=[]; carryEntries=[]; approvals=[]; repairs=[]; goldRateEntries=[]; goldRateAutoPromptShown=false;
       render();
       return;
     }
