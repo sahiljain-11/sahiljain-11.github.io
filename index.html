@@ -429,7 +429,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v73.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v75.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -949,6 +949,7 @@ let db=null, auth=null, liveStores=[], visits=[], markers=[], disabled={};
 let activeListeners=[];
 let zoneOn={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false,0:false,10:false,11:false,12:false}, query='';
 let vStats={}, rpDays=7, rpWho='', rpQuery='', rpSubFilter='', rpZoneFilter='', rpCustomRange=false, rpActiveTab='visits', rpShowCategories=false;
+let rpStoreStatusMode=null;
 let trips=[], editingTripId=null, currentTripReportId=null;
 let session=null; // {uid,name,role,email}
 function closeAllOverlays(){
@@ -2866,7 +2867,7 @@ document.getElementById('ciSave').onclick=()=>{
 document.getElementById('rpBtn').onclick=()=>{
   closeAllOverlays();
   if(session.role!=='admin'&&session.role!=='manager') rpWho=session.name;
-  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false; rpActiveTab='visits'; rpShowCategories=false;
+  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false; rpActiveTab='visits'; rpShowCategories=false; rpStoreStatusMode=null;
   document.getElementById('report').classList.add('open');drawReport();
 };
 document.getElementById('rpTabVisits').onclick=()=>{ rpActiveTab='visits'; drawReport(); };
@@ -2889,8 +2890,8 @@ document.getElementById('rpFromDate').addEventListener('change',()=>drawReport()
 document.getElementById('rpToDate').addEventListener('change',()=>drawReport());
 document.getElementById('rpZoneSelect').addEventListener('change',e=>{ rpZoneFilter=e.target.value; drawReport(); });
 document.getElementById('rpClose').onclick=()=>document.getElementById('report').classList.remove('open');
-document.getElementById('rpExportTop').onclick=()=>{ if(rpActiveTab==='trips') exportTripsTabExcel(); else exportVisits(); };
-document.getElementById('rpExportPdfTop').onclick=()=>{ if(rpActiveTab==='trips') exportTripsTabPdf(); else exportVisitsPdf(); };
+document.getElementById('rpExportTop').onclick=()=>{ if(rpActiveTab==='trips') exportTripsTabExcel(); else if(rpStoreStatusMode) exportStoreStatusExcel(); else exportVisits(); };
+document.getElementById('rpExportPdfTop').onclick=()=>{ if(rpActiveTab==='trips') exportTripsTabPdf(); else if(rpStoreStatusMode) exportStoreStatusPdf(); else exportVisitsPdf(); };
 document.getElementById('periodPills').addEventListener('click',e=>{
   if(!e.target.dataset.d)return;
   rpCustomRange=false;
@@ -2930,17 +2931,23 @@ function drawStoreStatusList(statusKeyword){
     html += matchingStores.map(s=>{
       let actions='';
       if(statusKeyword==='disabled'){
-        if(canDisable) actions += `<span class="pp-toggle" onclick="enableStoreFromReport('${s.id}')">Enable</span>`;
-        if(canDelete) actions += (actions?' · ':'')+`<span class="pp-toggle" style="color:var(--z1)" onclick="deleteStoreFromReport('${s.id}')">Delete</span>`;
+        if(canDisable) actions += `<span class="pp-toggle" onclick="event.stopPropagation();enableStoreFromReport('${s.id}')">Enable</span>`;
+        if(canDelete) actions += (actions?' · ':'')+`<span class="pp-toggle" style="color:var(--z1)" onclick="event.stopPropagation();deleteStoreFromReport('${s.id}')">Delete</span>`;
       }
       let callTrack='';
-      if(statusKeyword!=='disabled' && canTrackCalls){
+      const canOpenCard = statusKeyword!=='disabled' && canTrackCalls;
+      if(canOpenCard){
+        let calledWhen='';
+        if(s.calledStatus && s.calledAt && s.calledAt.toMillis){
+          const t=s.calledAt.toMillis();
+          calledWhen=' · '+new Date(t).toLocaleDateString('en-IN')+' '+new Date(t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
+        }
         const badge = s.calledStatus
-          ? `<span class="sc-done-badge">✓ Called${s.calledBy?' — '+s.calledBy:''}</span>`
+          ? `<span class="sc-done-badge">✓ Called${s.calledBy?' — '+s.calledBy:''}${calledWhen}</span>`
           : `<span class="sc-due-badge">Not called yet</span>`;
         const remarkVal = (s.callRemark||'').replace(/"/g,'&quot;');
-        callTrack = `<div style="margin-top:6px">${badge}</div>
-          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--cream-4)">
+        callTrack = `<div style="margin-top:6px">${badge} <span class="ledger-edit">tap to ${s.calledStatus?'update':'log a call'}</span></div>
+          <div class="ledger-edit-row" onclick="event.stopPropagation()">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
               <input type="checkbox" id="calledChk_${s.id}" ${s.calledStatus?'checked':''}> Called from office
             </label>
@@ -2948,7 +2955,7 @@ function drawStoreStatusList(statusKeyword){
             <button class="btn ghost" style="width:100%;margin-top:6px;font-size:11px;padding:6px" onclick="saveProspectCall('${s.id}')">Save</button>
           </div>`;
       }
-      return `<div class="v-item">
+      return `<div class="v-item ledger-block ${canOpenCard?'':'no-toggle'}" ${canOpenCard?'onclick="this.classList.toggle(\'editing\')" style="cursor:pointer"':''}>
         <b style="font-family:'Cinzel',serif;font-size:13.5px">${s.n}</b>
         <div style="font-size:11px;color:var(--muted);margin-top:1px">${s.a||''}</div>
         <div class="vm">${s.c?('📞 '+s.c):''}${actions?(s.c?' · ':'')+actions:''}</div>
@@ -2965,7 +2972,8 @@ window.saveProspectCall=function(id){
   db.collection(COL_RETAILERS).doc(id).update({
     calledStatus:checked, callRemark:remark, calledBy:session.name,
     calledAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(e=>alert('Could not save — '+e.message));
+  }).then(()=>{ if(rpStoreStatusMode) drawStoreStatusList(rpStoreStatusMode); })
+    .catch(e=>alert('Could not save — '+e.message));
 };
 window.enableStoreFromReport=function(id){
   if(!session||(session.role!=='admin'&&session.role!=='sales')) return;
@@ -3029,9 +3037,11 @@ function drawReport(){
   const isProspectKeyword = qterm.length>=3 && 'prospects'.startsWith(qterm);
   const isDisabledKeyword = qterm.length>=3 && 'disabled'.startsWith(qterm);
   if(isDisabledKeyword || isProspectKeyword){
-    drawStoreStatusList(isDisabledKeyword ? 'disabled' : 'prospect');
+    rpStoreStatusMode = isDisabledKeyword ? 'disabled' : 'prospect';
+    drawStoreStatusList(rpStoreStatusMode);
     return;
   }
+  rpStoreStatusMode=null;
   const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<cutoff || t>upperCutoff) return false;
@@ -3286,6 +3296,59 @@ function buildPdfFromVisits(rows, title, filename){
   });
   doc.save(filename);
 }
+function getStoreStatusRows(){
+  if(rpStoreStatusMode==='disabled'){
+    return allStores().filter(s=>disabled[s.id])
+      .sort((a,b)=>{
+        const tb=(disabled[b.id]&&disabled[b.id].ts&&disabled[b.id].ts.toMillis)?disabled[b.id].ts.toMillis():0;
+        const ta=(disabled[a.id]&&disabled[a.id].ts&&disabled[a.id].ts.toMillis)?disabled[a.id].ts.toMillis():0;
+        return tb-ta;
+      })
+      .map(s=>({
+        'Store':s.n, 'Area':s.a||'', 'Phone':s.c||'',
+        'Disabled by':(disabled[s.id]&&disabled[s.id].by)||'',
+        'Disabled on':(disabled[s.id]&&disabled[s.id].ts&&disabled[s.id].ts.toMillis)?new Date(disabled[s.id].ts.toMillis()).toLocaleDateString('en-IN'):''
+      }));
+  }else{
+    return allStores().filter(s=>!disabled[s.id] && isProspect(s))
+      .sort((a,b)=>{
+        const tb=(b.ts&&b.ts.toMillis)?b.ts.toMillis():0;
+        const ta=(a.ts&&a.ts.toMillis)?a.ts.toMillis():0;
+        return tb-ta;
+      })
+      .map(s=>({
+        'Store':s.n, 'Area':s.a||'', 'Phone':s.c||'',
+        'Added on':(s.ts&&s.ts.toMillis)?new Date(s.ts.toMillis()).toLocaleDateString('en-IN'):'',
+        'Called':s.calledStatus?'Yes':'No', 'Called by':s.calledBy||'', 'Remark':s.callRemark||''
+      }));
+  }
+}
+window.exportStoreStatusExcel=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export this.'); return; }
+  const rows=getStoreStatusRows();
+  downloadStyledExcel(rows, null, rpStoreStatusMode==='disabled'?'Disabled':'Prospects', 'bharni_'+(rpStoreStatusMode||'stores')+'_'+todayStr()+'.xlsx');
+};
+window.exportStoreStatusPdf=function(){
+  if(!session||session.role!=='admin'){ alert('Only admins can export this.'); return; }
+  const rows=getStoreStatusRows();
+  if(!rows.length){ alert('Nothing to export for the current view.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('Bharni Gems — '+(rpStoreStatusMode==='disabled'?'Disabled Stores':'Prospects'), 14, 15);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Generated '+new Date().toLocaleString('en-IN'), 14, 21);
+  const cols=Object.keys(rows[0]);
+  doc.autoTable({
+    startY: 26,
+    head: [cols],
+    body: rows.map(r=>cols.map(c=>r[c])),
+    styles:{fontSize:9, cellPadding:3},
+    headStyles:{fillColor:[28,23,18], textColor:[244,240,232]},
+    alternateRowStyles:{fillColor:[244,240,232]}
+  });
+  doc.save('bharni_'+(rpStoreStatusMode||'stores')+'_'+todayStr()+'.pdf');
+};
 window.exportVisitsPdf=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export the visit report.'); return; }
   buildPdfFromVisits(getFilteredVisitsForExport(), 'Bharni Gems — Visit Report', 'bharni_visits_'+todayStr()+'.pdf');
@@ -3320,7 +3383,10 @@ function attachDataListeners(){
   const isAdmin = session.role==='admin';
   const isAdminOrManager = session.role==='admin' || session.role==='manager';
 
-  activeListeners.push(db.collection(COL_RETAILERS).onSnapshot(s=>{liveStores=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();},
+  activeListeners.push(db.collection(COL_RETAILERS).onSnapshot(s=>{
+    liveStores=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();
+    if(rpStoreStatusMode && document.getElementById('report').classList.contains('open')) drawStoreStatusList(rpStoreStatusMode);
+  },
     e=>alert('Retailer sync error: '+e.message)));
 
   const visitsQuery = isAdminOrManager ? db.collection(COL_VISITS) : db.collection(COL_VISITS).where('foruid','==',session.uid);
