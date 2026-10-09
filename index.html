@@ -429,7 +429,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v75.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v76.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -841,6 +841,12 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
       <button class="btn ghost" id="backfillBtn" style="width:100%">Link past check-ins to their owner</button>
       <div id="backfillResult" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
     </div>
+    <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--gold)">
+      <div class="admin-label" style="color:var(--gold)">Reset stock to zero</div>
+      <select id="stockResetWho" style="width:100%;margin-bottom:8px"><option value="">Everyone</option></select>
+      <button class="btn" id="stockResetBtn" style="width:100%">Reset stock to zero</button>
+      <div id="stockResetResult" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
+    </div>
     <div class="divider" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--z1)">
       <div class="admin-label" style="color:var(--z1)">Danger zone — before going live</div>
       <button class="btn" id="wipeTestDataBtn" style="width:100%;background:var(--z1)">Clear all check-in / stock / trip / reminder data</button>
@@ -1162,7 +1168,7 @@ function computeCategoryBalances(person){
     if(!bal[mat]) bal[mat]={};
     bal[mat][e.category]=(bal[mat][e.category]||0)+(e.count||0);
   });
-  visits.filter(v=>v.by===person && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0).forEach(v=>{
+  visits.filter(v=>v.by===person && !v.stockVoid && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0).forEach(v=>{
     if(v.categoryBreakdown){
       Object.entries(v.categoryBreakdown).forEach(([mat,cats])=>{
         if(!bal[mat]) bal[mat]={};
@@ -1177,7 +1183,7 @@ function computeCategoryBalances(person){
 }
 function computeLedgerForPerson(person){
   const entries=carryEntries.filter(c=>c.by===person);
-  const soldVisits=visits.filter(v=>v.by===person && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0);
+  const soldVisits=visits.filter(v=>v.by===person && !v.stockVoid && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0);
   const catByDate={}, rawByDate={};
   entries.forEach(e=>{
     const mat=e.material||'Natural';
@@ -1292,6 +1298,13 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   }
   body.innerHTML=html;
 }
+let _nameUidCache=null;
+function uidForName(name){
+  if(!session||session.role!=='admin'||name===session.name) return Promise.resolve(session.uid);
+  const pick=()=>_nameUidCache[name]||null;
+  if(_nameUidCache) return Promise.resolve(pick());
+  return db.collection(COL_PROFILES).get().then(snap=>{ _nameUidCache={}; snap.forEach(d=>{const n=d.data().name; if(n) _nameUidCache[n]=d.id;}); return pick(); });
+}
 let stockSaveInProgress=false;
 window.saveMarketingAdd=function(){
   if(stockSaveInProgress) return;
@@ -1321,6 +1334,11 @@ window.saveMarketingAdd=function(){
 };
 window.saveMarketingAdjustment=function(date){
   if(stockSaveInProgress) return;
+  const _p=mktSelectedPerson||(session&&session.name);
+  uidForName(_p).then(u=>{ if(!u){ alert('Could not find this person\'s account — correction not saved.'); return; } window.__adjOwnerUid=u; saveMarketingAdjustmentRun(date); });
+};
+function saveMarketingAdjustmentRun(date){
+  if(stockSaveInProgress) return;
   if(!session||session.role!=='admin'){ alert('Only admins can make corrections.'); return; }
   const note=document.getElementById('adjNote_'+date).value.trim();
   if(!note){ alert('Please enter a reason for this correction — it stays visible in the history permanently.'); return; }
@@ -1348,12 +1366,13 @@ window.saveMarketingAdjustment=function(date){
   }
   const batch=db.batch();
   let any=false;
+  const ownerUid=window.__adjOwnerUid;
   STOCK_CATEGORIES.forEach(cat=>{
     const delta=(newNatural[cat]||0)-(curNatural[cat]||0);
     if(delta!==0){
       any=true;
       batch.set(db.collection(COL_CARRY).doc(), {
-        by:person, foruid:session.uid, date:date, category:cat, material:'Natural', count:delta,
+        by:person, foruid:ownerUid, date:date, category:cat, material:'Natural', count:delta,
         adjustment:true, adjustedBy:session.name, note:note,
         ts:firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -1364,7 +1383,7 @@ window.saveMarketingAdjustment=function(date){
     if(delta!==0){
       any=true;
       batch.set(db.collection(COL_CARRY).doc(), {
-        by:person, foruid:session.uid, date:date, category:cat, material:'LGD', count:delta,
+        by:person, foruid:ownerUid, date:date, category:cat, material:'LGD', count:delta,
         adjustment:true, adjustedBy:session.name, note:note,
         ts:firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -1373,7 +1392,7 @@ window.saveMarketingAdjustment=function(date){
   if(!any){ alert('No changes detected — nothing to save.'); return; }
   stockSaveInProgress=true;
   batch.commit().then(()=>{ stockSaveInProgress=false; }).catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
-};
+}
 
 
 
@@ -1465,7 +1484,7 @@ window.saveApprovalNew=function(){
   const payload={ by:stockRpWho||session.name, foruid:session.uid, retailerName:retailerName, pieces:+countRaw, sold:0, returned:0, dateGiven:todayStr(), ts:firebase.firestore.FieldValue.serverTimestamp() };
   if(approvalRetailerChosen && approvalRetailerChosen.n===retailerName) payload.retailerId=approvalRetailerChosen.id;
   stockSaveInProgress=true;
-  db.collection(COL_APPROVAL).add(payload)
+  uidForName(payload.by).then(u=>{ if(u) payload.foruid=u; return db.collection(COL_APPROVAL).add(payload); })
     .then(()=>{ stockSaveInProgress=false; approvalRetailerChosen=null; })
     .catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
@@ -1538,7 +1557,7 @@ window.saveRepairNew=function(){
   const payload={ by:stockRpWho||session.name, foruid:session.uid, pieces:+countRaw, returned:0, dateSent:todayStr(), ts:firebase.firestore.FieldValue.serverTimestamp() };
   if(remarks) payload.remarks=remarks;
   stockSaveInProgress=true;
-  db.collection(COL_REPAIR).add(payload)
+  uidForName(payload.by).then(u=>{ if(u) payload.foruid=u; return db.collection(COL_REPAIR).add(payload); })
     .then(()=>{ stockSaveInProgress=false; document.getElementById('repairNewRemarks').value=''; })
     .catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); });
 };
@@ -2135,6 +2154,7 @@ document.getElementById('excelBtn').onclick=()=>{
   document.getElementById('excelPreviewBox').style.display='none';
   pendingImportChanges=[];
   document.getElementById('excelSheet').classList.add('open');
+  fillStockResetPeople();
 };
 document.getElementById('excelCancel').onclick=()=>document.getElementById('excelSheet').classList.remove('open');
 document.getElementById('excelExportBtn').onclick=()=>{
@@ -2257,6 +2277,42 @@ document.getElementById('backfillBtn').onclick=()=>{
   }).catch(e=>{ resultBox.textContent='Could not run — '+e.message; btn.disabled=false; btn.textContent='Link past check-ins to their owner'; });
 };
 
+
+function fillStockResetPeople(){
+  const sel=document.getElementById('stockResetWho'); if(!sel||!session||session.role!=='admin') return;
+  db.collection(COL_PROFILES).get().then(snap=>{
+    const names=[]; _nameUidCache={};
+    snap.forEach(d=>{const n=d.data().name; if(n){ names.push(n); _nameUidCache[n]=d.id; }});
+    sel.innerHTML='<option value="">Everyone</option>'+names.sort().map(n=>'<option>'+n+'</option>').join('');
+  }).catch(()=>{});
+}
+document.getElementById('stockResetBtn').onclick=()=>{
+  if(!session||session.role!=='admin'){ alert('Only admins can do this.'); return; }
+  const who=document.getElementById('stockResetWho').value;
+  const label=who||'everyone';
+  if(!confirm('Reset stock to zero for '+label+'? This removes their daily stock entries, approvals and repairs, and stops past sales from being deducted. Check-ins and reports are kept. This cannot be undone.')) return;
+  const btn=document.getElementById('stockResetBtn'), box=document.getElementById('stockResetResult');
+  btn.disabled=true; btn.textContent='Resetting…';
+  const match=x=>!who||x.by===who;
+  const ops=[];
+  const addOps=(col)=>db.collection(col).get().then(snap=>{ snap.forEach(d=>{ if(match(d.data())) ops.push({ref:d.ref,del:true}); }); });
+  const run=()=>{
+    let chain=Promise.resolve();
+    for(let i=0;i<ops.length;i+=400){
+      const chunk=ops.slice(i,i+400);
+      chain=chain.then(()=>{ const b=db.batch(); chunk.forEach(o=>o.del?b.delete(o.ref):b.update(o.ref,{stockVoid:true})); return b.commit(); });
+    }
+    return chain;
+  };
+  addOps(COL_CARRY).then(()=>addOps(COL_APPROVAL)).then(()=>addOps(COL_REPAIR))
+  .then(()=>db.collection(COL_VISITS).get()).then(snap=>{
+    snap.forEach(d=>{ const v=d.data(); if(match(v) && !v.stockVoid && (v.outcome==='sold'||v.outcome==='stock_sold') && (v.pieces||0)>0) ops.push({ref:d.ref,del:false}); });
+    return run();
+  }).then(()=>{
+    box.textContent='Done — stock for '+label+' is now zero ('+ops.length+' records updated). Add fresh opening stock from the Stock page.';
+    btn.disabled=false; btn.textContent='Reset stock to zero';
+  }).catch(e=>{ box.textContent='Stopped partway — '+e.message+'. Safe to run again.'; btn.disabled=false; btn.textContent='Reset stock to zero'; });
+};
 document.getElementById('wipeTestDataBtn').onclick=()=>{
   if(!session||session.role!=='admin'){ alert('Only admins can do this.'); return; }
   if(!confirm('This PERMANENTLY deletes every check-in, marketing/stock entry, approval, repair, trip, and reminder in the database — for everyone, with no way to undo it. Retailers (the original list and anything added since) are NOT touched. Continue?')) return;
