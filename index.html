@@ -429,7 +429,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v76.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v77.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -1255,6 +1255,7 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   const today=todayStr();
   let html = canSeeAll ? `<span class="ledger-edit" onclick="mktSelectedPerson=''; stockRpWho=''; drawStockPage();">← All salespeople</span>` : '';
   html += `<div class="stat-row" style="margin-top:10px"><div class="stat-box ${latestEod<0?'warn':''}"><span class="sv">${latestEod}</span><span class="sl">${latestEod<0?'⚠️ Needs reconciliation':'In hand right now'}</span></div></div>`;
+  if(canSeeAll) html += `<button class="btn ghost" id="zeroStockBtn" style="width:100%;margin-top:10px" onclick="zeroStockTap('${mktSelectedPerson.replace(/'/g,"\\'")}')">Zero stock (stock tally)</button>`;
   html += addCard;
   html += `<div class="ledger-row head"><span>Date</span><span>Opening</span><span>Added</span><span>Sold</span><span>EOD</span></div>`;
   if(!rows.length){ html+='<div class="rm-empty">No activity in this period.</div>'; }
@@ -1298,6 +1299,35 @@ function drawMarketingTab(cutoff,upperCutoff,canSeeAll){
   }
   body.innerHTML=html;
 }
+let zeroStockArmed='';
+window.zeroStockTap=function(person){
+  const btn=document.getElementById('zeroStockBtn');
+  if(zeroStockArmed!==person){
+    zeroStockArmed=person;
+    btn.textContent='Tap again to set '+person+'\'s stock to zero';
+    btn.style.background='var(--z1)'; btn.style.color='#fff';
+    setTimeout(()=>{ if(zeroStockArmed===person){ zeroStockArmed=''; const b=document.getElementById('zeroStockBtn'); if(b){ b.textContent='Zero stock (stock tally)'; b.style.background=''; b.style.color=''; } } },5000);
+    return;
+  }
+  zeroStockArmed='';
+  if(stockSaveInProgress) return;
+  if(!session||session.role!=='admin') return;
+  const bal=computeCategoryBalances(person);
+  const items=[];
+  Object.entries(bal).forEach(([mat,cats])=>Object.entries(cats).forEach(([cat,n])=>{ if(n!==0) items.push({mat,cat,n}); }));
+  if(!items.length){ btn.textContent='Stock is already zero'; return; }
+  stockSaveInProgress=true; btn.disabled=true; btn.textContent='Saving…';
+  uidForName(person).then(u=>{
+    if(!u) throw new Error('could not find this person\'s account');
+    const batch=db.batch();
+    items.forEach(it=>batch.set(db.collection(COL_CARRY).doc(),{
+      by:person, foruid:u, date:todayStr(), category:it.cat, material:it.mat, count:-it.n,
+      adjustment:true, adjustedBy:session.name, note:'Stock tally — returned to zero',
+      ts:firebase.firestore.FieldValue.serverTimestamp()
+    }));
+    return batch.commit();
+  }).then(()=>{ stockSaveInProgress=false; }).catch(e=>{ stockSaveInProgress=false; alert('Could not save — '+e.message); drawStockPage(); });
+};
 let _nameUidCache=null;
 function uidForName(name){
   if(!session||session.role!=='admin'||name===session.name) return Promise.resolve(session.uid);
@@ -3108,11 +3138,12 @@ function drawReport(){
   });
   const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin||v.noGps).length : 0;
   const stockSoldCountBase = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold').length;
-  const ordersTakenCountBase = preFlagFilter.filter(v=>v.outcome==='order_taken').length;
+  const prospectIds=new Set(allStores().filter(isProspect).map(s=>s.id));
+  const prospectCountBase = preFlagFilter.filter(v=>prospectIds.has(v.sid)).length;
   const piecesCountBase = preFlagFilter.reduce((s,v)=>s+(v.pieces||0),0);
   let inRange = preFlagFilter;
   if(rpSubFilter==='stocksold') inRange = preFlagFilter.filter(v=>v.outcome==='sold'||v.outcome==='stock_sold');
-  else if(rpSubFilter==='orderstaken') inRange = preFlagFilter.filter(v=>v.outcome==='order_taken');
+  else if(rpSubFilter==='prospects') inRange = preFlagFilter.filter(v=>prospectIds.has(v.sid));
   else if(rpSubFilter==='pieces') inRange = preFlagFilter.filter(v=>(v.pieces||0)>0);
   else if(rpSubFilter==='flagged' && canSeeAllReports) inRange = preFlagFilter.filter(v=>v.farCheckin||v.noGps);
   const areaOfStore={};
@@ -3125,12 +3156,12 @@ function drawReport(){
     + `<div class="stat-box ${on('')}" onclick="setRpSubFilter('')" style="cursor:pointer"><span class="sv">${preFlagFilter.length}</span><span class="sl">Check-ins</span></div>`
     + `<div class="stat-box"><span class="sv">${visitedStores}/${activeStores}</span><span class="sl">Stores (${covPct}%)</span></div>`
     + `<div class="stat-box ${on('stocksold')}" onclick="setRpSubFilter('stocksold')" style="cursor:pointer"><span class="sv">${stockSoldCountBase}</span><span class="sl">Sales (visits)</span></div>`
-    + `<div class="stat-box ${on('orderstaken')}" onclick="setRpSubFilter('orderstaken')" style="cursor:pointer"><span class="sv">${ordersTakenCountBase}</span><span class="sl">Orders Taken</span></div>`
+    + `<div class="stat-box ${on('prospects')}" onclick="setRpSubFilter('prospects')" style="cursor:pointer"><span class="sv">${prospectCountBase}</span><span class="sl">Prospects</span></div>`
     + `<div class="stat-box ${on('pieces')}" onclick="setRpSubFilter('pieces')" style="cursor:pointer"><span class="sv">${piecesCountBase}</span><span class="sl">Pieces Sold</span></div>`
     + (canSeeAllReports ? `<div class="stat-box ${flaggedCount>0?'warn':''} ${on('flagged')}" onclick="setRpSubFilter('flagged')" style="cursor:pointer"><span class="sv">${flaggedCount}</span><span class="sl">Flagged</span></div>` : '')
     + '</div>';
   html += `<span class="pill ${rpShowCategories?'on':''}" onclick="rpShowCategories=!rpShowCategories;drawReport();" style="display:inline-block;margin-top:8px">Categories</span>`;
-  if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='stocksold'?'Stock Sold':rpSubFilter==='orderstaken'?'Orders Taken':rpSubFilter==='pieces'?'Pieces Sold':'Flagged'}</b></div>`;
+  if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='stocksold'?'Stock Sold':rpSubFilter==='prospects'?'Prospects':rpSubFilter==='pieces'?'Pieces Sold':'Flagged'}</b></div>`;
   if(rpWho) html+=`<div class="rp-subline">Showing: <b style="font-family:'Bodoni Moda',serif">${rpWho}</b></div>`;
   const areaCoverage={};
   inRange.forEach(v=>{
@@ -3258,6 +3289,7 @@ function getFilteredVisitsForExport(){
     effCutoff = canSeeAllForExport ? 0 : Date.now()-365*864e5;
     effUpperCutoff = Date.now()+864e5;
   }
+  const prospectIdsX=new Set(allStores().filter(isProspect).map(s=>s.id));
   return visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<effCutoff || t>effUpperCutoff) return false;
@@ -3267,7 +3299,7 @@ function getFilteredVisitsForExport(){
     if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
     if(rpSubFilter==='flagged' && !(v.farCheckin||v.noGps)) return false;
     if(rpSubFilter==='stocksold' && !(v.outcome==='sold'||v.outcome==='stock_sold')) return false;
-    if(rpSubFilter==='orderstaken' && v.outcome!=='order_taken') return false;
+    if(rpSubFilter==='prospects' && !prospectIdsX.has(v.sid)) return false;
     if(rpSubFilter==='pieces' && !((v.pieces||0)>0)) return false;
     return true;
   });
