@@ -429,7 +429,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v79.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v80.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -2035,12 +2035,27 @@ function wireZoneSearch(searchId,suggestId,selectId){
 const syncFZoneSearch=wireZoneSearch('fZoneSearch','fZoneSuggest','fZone');
 const syncEZoneSearch=wireZoneSearch('eZoneSearch','eZoneSuggest','eZone');
 const syncRpZoneSearch=wireZoneSearch('rpZoneSearch','rpZoneSuggest','rpZoneSelect');
+const CITY_GROUPS={'Hyderabad':['1','2','3','4'],'Bengaluru':['10','11','12']};
+function storeState(s){ return (s&&(s.state||s.st))||''; }
+function makeZonePredicate(){
+  const f=rpZoneFilter;
+  if(!f) return ()=>true;
+  if(f.startsWith('city:')){ const set=new Set(CITY_GROUPS[f.slice(5)]||[]); return z=>set.has(String(z)); }
+  if(f.startsWith('state:')){
+    const st=f.slice(6), byId={}; allStores().forEach(x=>{ byId[x.id]=storeState(x); });
+    return (z,sid)=>byId[sid]===st;
+  }
+  return z=>String(z)===f;
+}
 function populateReportZoneFilter(){
   const sel=document.getElementById('rpZoneSelect');
   const current=sel.value;
   const entries=Object.keys(ZN).filter(k=>k!=='9').map(k=>[k,ZN[k]]).concat(Object.keys(customZones).map(id=>[id,customZones[id].name]));
   entries.sort((a,b)=>a[1].localeCompare(b[1]));
-  sel.innerHTML='<option value="">All areas / districts</option>'+
+  const states=[...new Set(allStores().map(storeState).filter(Boolean))].sort();
+  const groups=Object.keys(CITY_GROUPS).map(c=>`<option value="city:${c}">All ${c} (all zones)</option>`).join('')
+    + states.map(st=>`<option value="state:${st}">All ${st}</option>`).join('');
+  sel.innerHTML='<option value="">All areas / districts</option>'+groups+
     entries.map(([code,name])=>`<option value="${code}">${name}</option>`).join('');
   if([...sel.options].some(o=>o.value===current)) sel.value=current;
   if(typeof syncRpZoneSearch==="function") syncRpZoneSearch();
@@ -3159,12 +3174,13 @@ function drawReport(){
     return;
   }
   rpStoreStatusMode=null;
+  const zonePred=makeZonePredicate();
   const preFlagFilter=visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
     if(t<cutoff || t>upperCutoff) return false;
     if(rpWho && v.by!==rpWho) return false;
     if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
-    if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
+    if(!zonePred(v.z,v.sid)) return false;
     return true;
   });
   const flaggedCount = canSeeAllReports ? preFlagFilter.filter(v=>v.farCheckin||v.noGps).length : 0;
@@ -3324,6 +3340,7 @@ function getFilteredVisitsForExport(){
     effCutoff = canSeeAllForExport ? 0 : Date.now()-365*864e5;
     effUpperCutoff = Date.now()+864e5;
   }
+  const zonePredX=makeZonePredicate();
   const prospectIdsX=new Set(allStores().filter(isProspect).map(s=>s.id));
   return visits.filter(v=>{
     const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0;
@@ -3331,7 +3348,7 @@ function getFilteredVisitsForExport(){
     if(rpWho && v.by!==rpWho) return false;
     if(isProspectSearch){ if(!prospectLookup[v.sid]) return false; }
     else if(qterm && !((v.sn||'')+' '+(v.a||'')).toLowerCase().includes(qterm)) return false;
-    if(rpZoneFilter && String(v.z)!==rpZoneFilter) return false;
+    if(!zonePredX(v.z,v.sid)) return false;
     if(rpSubFilter==='flagged' && !(v.farCheckin||v.noGps)) return false;
     if(rpSubFilter==='stocksold' && !(v.outcome==='sold'||v.outcome==='stock_sold')) return false;
     if(rpSubFilter==='prospects' && !prospectIdsX.has(v.sid)) return false;
@@ -3427,7 +3444,10 @@ function drawMissedList(cutoff,upperCutoff){
   visits.forEach(v=>{ const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0; if(!lastVisit[v.sid]||t>lastVisit[v.sid].t) lastVisit[v.sid]={t,by:v.by}; });
   let scope=allStores().filter(s=>!disabled[s.id]);
   let scopeNote='All active stores';
-  if(rpZoneFilter){ scope=scope.filter(s=>String(effectiveZone(s))===rpZoneFilter); scopeNote=zName(effectiveZone(scope[0]||{})) && zName(isNaN(+rpZoneFilter)?rpZoneFilter:+rpZoneFilter); }
+  if(rpZoneFilter){
+    const zp=makeZonePredicate(); scope=scope.filter(s=>zp(effectiveZone(s),s.id));
+    scopeNote = rpZoneFilter.startsWith('city:') ? 'All '+rpZoneFilter.slice(5) : rpZoneFilter.startsWith('state:') ? 'All '+rpZoneFilter.slice(6) : (document.getElementById('rpZoneSearch').value||'Selected group');
+  }
   else if(rpWho){ const areas=new Set(pv.map(v=>v.a).filter(Boolean)); scope=scope.filter(s=>areas.has(s.a)); scopeNote='Areas '+rpWho+' visited in this period'; }
   if(qterm) scope=scope.filter(s=>((s.n||'')+' '+(s.a||'')).toLowerCase().includes(qterm));
   const byArea={};
