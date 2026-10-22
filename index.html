@@ -429,7 +429,7 @@ header{background:var(--cream);border-bottom:1px solid var(--line);padding:12px 
     </div>
   </div>
 </div>
-<div id="stamp">BHARNI BUILD MAP-LIVE-v77.0</div>
+<div id="stamp">BHARNI BUILD MAP-LIVE-v79.0</div>
 
 <div class="sheet" id="addSheet">
   <h3>New retailer</h3>
@@ -955,7 +955,7 @@ let db=null, auth=null, liveStores=[], visits=[], markers=[], disabled={};
 let activeListeners=[];
 let zoneOn={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false,0:false,10:false,11:false,12:false}, query='';
 let vStats={}, rpDays=7, rpWho='', rpQuery='', rpSubFilter='', rpZoneFilter='', rpCustomRange=false, rpActiveTab='visits', rpShowCategories=false;
-let rpStoreStatusMode=null;
+let rpStoreStatusMode=null, rpMissedMode=false, lastMissedRows=[];
 let trips=[], editingTripId=null, currentTripReportId=null;
 let session=null; // {uid,name,role,email}
 function closeAllOverlays(){
@@ -1046,10 +1046,10 @@ function renderGoldRateTodayList(){
 }
 window.exportGoldRateExcel=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export this.'); return; }
-  const rows=goldRateEntries.slice().sort((a,b)=>(a.ts?.toMillis?.()||0)-(b.ts?.toMillis?.()||0)).map(e=>{
+  const rows=goldRateEntries.slice().sort((a,b)=>(b.ts?.toMillis?.()||0)-(a.ts?.toMillis?.()||0)).map(e=>{
     const t=e.ts&&e.ts.toMillis?new Date(e.ts.toMillis()):null;
     return {
-      'Date':e.date||'', 'Time':t?t.toLocaleTimeString('en-IN'):'',
+      'Date':e.date||'', 'Time':t?xlTime(t):'',
       'Rate per gram (₹)':e.rate, 'Logged by':e.by||''
     };
   });
@@ -1615,17 +1615,18 @@ function getStockExportRows(){
         rows.push({'Salesperson':p,'Date':r.date,'Opening':r.opening,'Added':r.additions,'Added Categories':catLine,'Sold':r.sales,'Sold Categories':soldCatLine,'EOD':r.eod});
       });
     });
+    rows.sort((x,y)=>y.Date.localeCompare(x.Date)||x.Salesperson.localeCompare(y.Salesperson));
     return rows;
   }else if(stockActiveTab==='approval'){
     return approvals.filter(a=>{
       const ms=new Date(a.dateGiven+'T00:00:00').getTime();
       return ms>=cutoff && ms<=upperCutoff && (!stockRpWho||a.by===stockRpWho);
-    }).map(a=>({'Salesperson':a.by,'Retailer':a.retailerName,'Date Given':a.dateGiven,'Pieces Given':a.pieces,'Sold':a.sold||0,'Returned':a.returned||0,'Due':a.pieces-(a.sold||0)-(a.returned||0)}));
+    }).map(a=>({'Salesperson':a.by,'Retailer':a.retailerName,'Date Given':a.dateGiven,'Pieces Given':a.pieces,'Sold':a.sold||0,'Returned':a.returned||0,'Due':a.pieces-(a.sold||0)-(a.returned||0)})).sort((x,y)=>String(y['Date Given']).localeCompare(String(x['Date Given'])));
   }else{
     return repairs.filter(r=>{
       const ms=new Date(r.dateSent+'T00:00:00').getTime();
       return ms>=cutoff && ms<=upperCutoff && (!stockRpWho||r.by===stockRpWho);
-    }).map(r=>({'Salesperson':r.by,'Date Sent':r.dateSent,'Pieces Sent':r.pieces,'Returned':r.returned||0,'Due':r.pieces-(r.returned||0),'Remarks':r.remarks||''}));
+    }).map(r=>({'Salesperson':r.by,'Date Sent':r.dateSent,'Pieces Sent':r.pieces,'Returned':r.returned||0,'Due':r.pieces-(r.returned||0),'Remarks':r.remarks||''})).sort((x,y)=>String(y['Date Sent']).localeCompare(String(x['Date Sent'])));
   }
 }
 window.exportStockExcel=function(){
@@ -1780,17 +1781,45 @@ function buildStats(){
   });
 }
 function fmtD(ms){ return ms?new Date(ms).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):''; }
+function xlNormalise(h,v){
+  if(v===''||v==null) return v;
+  if(/^(date|date given|date sent|added on|disabled on|last visited)$/i.test(h) && typeof v==='string'){
+    let m=v.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));
+    m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m) return new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));
+  }
+  if(/^time$/i.test(h) && typeof v==='string'){
+    const m=v.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+    if(m){ let hh=+m[1]; const ap=(m[4]||'').toLowerCase(); if(ap==='pm'&&hh<12) hh+=12; if(ap==='am'&&hh===12) hh=0; return (hh*3600+(+m[2])*60+(+(m[3]||0)))/86400; }
+  }
+  return v;
+}
 async function downloadStyledExcel(rows, colWidths, sheetName, filename){
   if(!rows.length){ alert('Nothing to export for the current view.'); return; }
   const headers=Object.keys(rows[0]);
+  rows=rows.map(r=>{ const o={}; headers.forEach(h=>{ o[h]=xlNormalise(h,r[h]); }); return o; });
+  const widthFor=(h,i)=>{
+    if(colWidths&&colWidths[i]) return colWidths[i];
+    let w=String(h).length+4;
+    rows.slice(0,200).forEach(r=>{ const v=r[h]; const l=(v instanceof Date)?11:String(v==null?'':v).length; if(l+2>w) w=l+2; });
+    return Math.min(Math.max(w,10),46);
+  };
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet(sheetName);
-  ws.columns=headers.map((h,i)=>({header:h, key:h, width:(colWidths&&colWidths[i])||15}));
+  ws.columns=headers.map((h,i)=>({header:h, key:h, width:widthFor(h,i)}));
   rows.forEach(r=>ws.addRow(r));
+  const thin={style:'thin',color:{argb:'FFD9D0BC'}};
+  headers.forEach((h,i)=>{
+    const col=ws.getColumn(i+1);
+    if(/^(date|date given|date sent|added on|disabled on|last visited)$/i.test(h)){ col.numFmt='dd/mm/yyyy'; col.alignment={horizontal:'center',vertical:'top'}; }
+    else if(/^time$/i.test(h)){ col.numFmt='h:mm:ss AM/PM'; col.alignment={horizontal:'center',vertical:'top'}; }
+    else if(rows.some(r=>typeof r[h]==='number')&&rows.every(r=>r[h]===''||r[h]==null||typeof r[h]==='number')) col.alignment={horizontal:'right',vertical:'top'};
+    else col.alignment={vertical:'top',wrapText:true};
+  });
+  ws.eachRow((row,n)=>{ row.eachCell({includeEmpty:true},cell=>{ cell.border={top:thin,bottom:thin,left:thin,right:thin}; cell.font=Object.assign({name:'Calibri',size:11},n===1?{bold:true,color:{argb:'FF1C1712'}}:{}); }); });
+  ws.getRow(1).height=24;
   ws.getRow(1).eachCell(cell=>{
-    cell.font={bold:true,color:{argb:'FF1C1712'}};
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4EFE0'}};
-    cell.alignment={vertical:'middle'};
+    cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
   });
   ws.autoFilter={from:{row:1,column:1},to:{row:1,column:headers.length}};
   ws.views=[{state:'frozen',ySplit:1}];
@@ -2953,7 +2982,7 @@ document.getElementById('ciSave').onclick=()=>{
 document.getElementById('rpBtn').onclick=()=>{
   closeAllOverlays();
   if(session.role!=='admin'&&session.role!=='manager') rpWho=session.name;
-  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false; rpActiveTab='visits'; rpShowCategories=false; rpStoreStatusMode=null;
+  document.getElementById('rpSearch').value=''; rpQuery=''; rpSubFilter=''; rpCustomRange=false; rpActiveTab='visits'; rpShowCategories=false; rpStoreStatusMode=null; rpMissedMode=false;
   document.getElementById('report').classList.add('open');drawReport();
 };
 document.getElementById('rpTabVisits').onclick=()=>{ rpActiveTab='visits'; drawReport(); };
@@ -2989,6 +3018,7 @@ window.setRpSubFilter=function(key){
   drawReport();
 };
 function drawStoreStatusList(statusKeyword){
+  if(statusKeyword==='missed'){ drawReport(); return; }
   const canDisable = session && (session.role==='admin' || session.role==='sales');
   const canDelete = session && session.role==='admin';
   let matchingStores, title;
@@ -3119,6 +3149,7 @@ function drawReport(){
     drawTripsTabBody(cutoff, upperCutoff, canSeeAllReports);
     return;
   }
+  if(rpMissedMode){ rpStoreStatusMode='missed'; drawMissedList(cutoff,upperCutoff); return; }
   const qterm=rpQuery.trim().toLowerCase();
   const isProspectKeyword = qterm.length>=3 && 'prospects'.startsWith(qterm);
   const isDisabledKeyword = qterm.length>=3 && 'disabled'.startsWith(qterm);
@@ -3160,6 +3191,7 @@ function drawReport(){
     + `<div class="stat-box ${on('pieces')}" onclick="setRpSubFilter('pieces')" style="cursor:pointer"><span class="sv">${piecesCountBase}</span><span class="sl">Pieces Sold</span></div>`
     + (canSeeAllReports ? `<div class="stat-box ${flaggedCount>0?'warn':''} ${on('flagged')}" onclick="setRpSubFilter('flagged')" style="cursor:pointer"><span class="sv">${flaggedCount}</span><span class="sl">Flagged</span></div>` : '')
     + '</div>';
+  html += `<span class="pill" onclick="rpMissedMode=true;drawReport();" style="display:inline-block;margin-top:8px;margin-left:6px">Not visited</span>`;
   html += `<span class="pill ${rpShowCategories?'on':''}" onclick="rpShowCategories=!rpShowCategories;drawReport();" style="display:inline-block;margin-top:8px">Categories</span>`;
   if(rpSubFilter) html+=`<div class="rp-subline">Showing only: <b style="font-family:'Bodoni Moda',serif">${rpSubFilter==='stocksold'?'Stock Sold':rpSubFilter==='prospects'?'Prospects':rpSubFilter==='pieces'?'Pieces Sold':'Flagged'}</b></div>`;
   if(rpWho) html+=`<div class="rp-subline">Showing: <b style="font-family:'Bodoni Moda',serif">${rpWho}</b></div>`;
@@ -3244,19 +3276,19 @@ window.exportTripVisitsPdf=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
   if(!currentTripReportId) return;
   const t=trips.find(x=>x.id===currentTripReportId);
-  const rows=visits.filter(v=>v.tripId===currentTripReportId);
+  const rows=visits.filter(v=>v.tripId===currentTripReportId).sort(byTsDesc);
   buildPdfFromVisits(rows, 'Bharni Gems — '+(t?tripLabel(t):'Trip'), 'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.pdf');
 };
 window.exportTripVisits=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
   if(!currentTripReportId) return;
   const t=trips.find(x=>x.id===currentTripReportId);
-  const rows=visits.filter(v=>v.tripId===currentTripReportId);
+  const rows=visits.filter(v=>v.tripId===currentTripReportId).sort(byTsDesc);
   const data=rows.map(v=>{
     const tt=v.ts&&v.ts.toMillis?new Date(v.ts.toMillis()):null;
     const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
     return {
-      'Date': tt?tt.toLocaleDateString('en-IN'):'', 'Time': tt?tt.toLocaleTimeString('en-IN'):'',
+      'Date': tt?xlDate(tt):'', 'Time': tt?xlTime(tt):'',
       'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
       'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
       'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
@@ -3265,6 +3297,9 @@ window.exportTripVisits=function(){
   });
   downloadStyledExcel(data, [11,9,26,18,22,14,12,24,9,22,30,14,30], 'Trip', 'bharni_'+(t?t.type.replace(/\s+/g,'_'):'trip')+'_'+todayStr()+'.xlsx');
 };
+function byTsDesc(a,b){ const ta=a.ts&&a.ts.toMillis?a.ts.toMillis():0, tb=b.ts&&b.ts.toMillis?b.ts.toMillis():0; return tb-ta; }
+function xlDate(d){ return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); }
+function xlTime(d){ return (d.getHours()*3600+d.getMinutes()*60+d.getSeconds())/86400; }
 function getFilteredVisitsForExport(){
   let cutoff, upperCutoff=Date.now()+864e5;
   if(rpCustomRange){
@@ -3302,7 +3337,7 @@ function getFilteredVisitsForExport(){
     if(rpSubFilter==='prospects' && !prospectIdsX.has(v.sid)) return false;
     if(rpSubFilter==='pieces' && !((v.pieces||0)>0)) return false;
     return true;
-  });
+  }).sort(byTsDesc);
 }
 function getFilteredTripVisitsForExport(){
   const canSeeAllReports = session && (session.role==='admin' || session.role==='manager');
@@ -3332,7 +3367,7 @@ function getFilteredTripVisitsForExport(){
     return true;
   });
   const tripIds=new Set(filteredTrips.map(t=>t.id));
-  return visits.filter(v=>v.tripId && tripIds.has(v.tripId) && (!rpWho || v.by===rpWho));
+  return visits.filter(v=>v.tripId && tripIds.has(v.tripId) && (!rpWho || v.by===rpWho)).sort(byTsDesc);
 }
 window.exportTripsTabExcel=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export trip data.'); return; }
@@ -3342,7 +3377,7 @@ window.exportTripsTabExcel=function(){
     const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
     const trip=trips.find(t2=>t2.id===v.tripId);
     return {
-      'Trip': trip?tripLabel(trip):'', 'Date': t?t.toLocaleDateString('en-IN'):'', 'Time': t?t.toLocaleTimeString('en-IN'):'',
+      'Trip': trip?tripLabel(trip):'', 'Date': t?xlDate(t):'', 'Time': t?xlTime(t):'',
       'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
       'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
       'Style': v.style||'', 'Specifications': v.specs||'', 'Expected Delivery': v.deliveryDate||'',
@@ -3384,7 +3419,33 @@ function buildPdfFromVisits(rows, title, filename){
   });
   doc.save(filename);
 }
+function drawMissedList(cutoff,upperCutoff){
+  const qterm=rpQuery.trim().toLowerCase();
+  const pv=visits.filter(v=>{ const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0; return t>=cutoff && t<=upperCutoff && (!rpWho||v.by===rpWho); });
+  const visitedIds=new Set(pv.map(v=>v.sid));
+  const lastVisit={};
+  visits.forEach(v=>{ const t=v.ts&&v.ts.toMillis?v.ts.toMillis():0; if(!lastVisit[v.sid]||t>lastVisit[v.sid].t) lastVisit[v.sid]={t,by:v.by}; });
+  let scope=allStores().filter(s=>!disabled[s.id]);
+  let scopeNote='All active stores';
+  if(rpZoneFilter){ scope=scope.filter(s=>String(effectiveZone(s))===rpZoneFilter); scopeNote=zName(effectiveZone(scope[0]||{})) && zName(isNaN(+rpZoneFilter)?rpZoneFilter:+rpZoneFilter); }
+  else if(rpWho){ const areas=new Set(pv.map(v=>v.a).filter(Boolean)); scope=scope.filter(s=>areas.has(s.a)); scopeNote='Areas '+rpWho+' visited in this period'; }
+  if(qterm) scope=scope.filter(s=>((s.n||'')+' '+(s.a||'')).toLowerCase().includes(qterm));
+  const byArea={};
+  scope.forEach(s=>{ const a=s.a||'—'; (byArea[a]=byArea[a]||{total:0,missed:[]}).total++; if(!visitedIds.has(s.id)) byArea[a].missed.push(s); });
+  const areas=Object.entries(byArea).filter(([a,g])=>g.missed.length).sort((x,y)=>y[1].missed.length-x[1].missed.length||x[0].localeCompare(y[0]));
+  const totalMissed=areas.reduce((n,[a,g])=>n+g.missed.length,0);
+  lastMissedRows=[];
+  areas.forEach(([a,g])=>g.missed.forEach(s=>{ const lv=lastVisit[s.id]; lastMissedRows.push({'Area':a,'Store':s.n,'Phone':s.c||'','Group':zName(effectiveZone(s)),'Prospect':(isProspect(s)?'Prospect':''),'Last visited':lv&&lv.t?localDateStr(lv.t):'','Last visited by':lv?lv.by||'':''}); }));
+  let html=`<div class="stat-row"><div class="stat-box"><span class="sv">${totalMissed}</span><span class="sl">Not visited</span></div><div class="stat-box"><span class="sv">${scope.length-totalMissed}/${scope.length}</span><span class="sl">Covered</span></div></div>`;
+  html+=`<span class="pill on" onclick="rpMissedMode=false;rpStoreStatusMode=null;drawReport();" style="display:inline-block;margin-top:8px">Not visited</span><div class="rp-subline">${scopeNote}${rpWho?' · '+rpWho:''}</div>`;
+  if(!areas.length) html+='<div class="rm-empty">Every store in scope was visited in this period.</div>';
+  html+=areas.map(([a,g])=>`<div class="area-card"><div class="zbar" style="background:#B8923A"></div>
+    <div class="area-head" onclick="this.parentElement.classList.toggle('open')"><div class="an">${a}<small>${g.total-g.missed.length} of ${g.total} stores covered</small></div><div class="ac"><b>${g.missed.length}</b>missed</div></div>
+    <div class="store-rows">${g.missed.map(s=>{ const lv=lastVisit[s.id]; return `<div class="store-row"><div class="sn"><span>${s.n}${isProspect(s)?' — Prospect':''}</span></div><div class="vm" style="font-size:11px;color:var(--muted);padding:2px 0 6px">${lv&&lv.t?'Last visited '+fmtD(lv.t)+(lv.by?' · '+lv.by:''):'Never visited'}</div></div>`; }).join('')}</div></div>`).join('');
+  document.getElementById('rpBody').innerHTML=html;
+}
 function getStoreStatusRows(){
+  if(rpStoreStatusMode==='missed') return lastMissedRows;
   if(rpStoreStatusMode==='disabled'){
     return allStores().filter(s=>disabled[s.id])
       .sort((a,b)=>{
@@ -3414,7 +3475,7 @@ function getStoreStatusRows(){
 window.exportStoreStatusExcel=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export this.'); return; }
   const rows=getStoreStatusRows();
-  downloadStyledExcel(rows, null, rpStoreStatusMode==='disabled'?'Disabled':'Prospects', 'bharni_'+(rpStoreStatusMode||'stores')+'_'+todayStr()+'.xlsx');
+  downloadStyledExcel(rows, null, rpStoreStatusMode==='missed'?'Not visited':rpStoreStatusMode==='disabled'?'Disabled':'Prospects', 'bharni_'+(rpStoreStatusMode||'stores')+'_'+todayStr()+'.xlsx');
 };
 window.exportStoreStatusPdf=function(){
   if(!session||session.role!=='admin'){ alert('Only admins can export this.'); return; }
@@ -3423,7 +3484,7 @@ window.exportStoreStatusPdf=function(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
   doc.setFont('helvetica','bold'); doc.setFontSize(14);
-  doc.text('Bharni Gems — '+(rpStoreStatusMode==='disabled'?'Disabled Stores':'Prospects'), 14, 15);
+  doc.text('Bharni Gems — '+(rpStoreStatusMode==='missed'?'Stores Not Visited':rpStoreStatusMode==='disabled'?'Disabled Stores':'Prospects'), 14, 15);
   doc.setFont('helvetica','normal'); doc.setFontSize(9);
   doc.text('Generated '+new Date().toLocaleString('en-IN'), 14, 21);
   const cols=Object.keys(rows[0]);
@@ -3451,7 +3512,7 @@ window.exportVisits=function(){
     const outcomeLabel = (v.outcome==='sold'||v.outcome==='stock_sold') ? 'Stock sold' : v.outcome==='order_taken' ? 'Order taken' : v.outcome==='not_sold' ? 'Not sold' : '';
     const flagLabel = v.farCheckin ? (v.distanceM+'m off') : v.noGps ? 'No GPS' : '';
     return {
-      'Date': t?t.toLocaleDateString('en-IN'):'', 'Time': t?t.toLocaleTimeString('en-IN'):'',
+      'Date': t?xlDate(t):'', 'Time': t?xlTime(t):'',
       'Store': v.sn, 'Area': v.a||'', 'Group': zName(v.z), 'Salesman': v.by||'',
       'Prospect Status': prospectMap[v.sid] ? 'Prospect' : '',
       'Outcome': outcomeLabel, 'Reason': v.reason||'', 'Pieces Sold': v.pieces||'',
